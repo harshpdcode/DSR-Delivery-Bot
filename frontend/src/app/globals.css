@@ -1,0 +1,66 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-surface-0 text-brand-white font-sans antialiased selection:bg-brand-lime selection:text-brand-black;
+  }
+}
+
+/* ── Custom Utilities ────────────────────────────── */
+
+.bg-grid-glow {
+  background-image: 
+    radial-gradient(circle at 50% 50%, rgba(198, 255, 0, 0.05), transparent 80%),
+    linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+  background-size: 100% 100%, 40px 40px, 40px 40px;
+}
+
+.glassmorphism {
+  @apply bg-surface-2/60 backdrop-blur-md border border-surface-4/40;
+}
+
+.glassmorphism-premium {
+  @apply bg-surface-1/80 backdrop-blur-lg border border-brand-lime/10 shadow-glow-lime;
+}
+
+/* ── Custom Scrollbar ────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0A0A0A;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #222222;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #C6FF00;
+}
+
+/* ── Pulse Rings ─────────────────────────────────── */
+@keyframes ring-pulse {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(198, 255, 0, 0.7);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 10px rgba(198, 255, 0, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(198, 255, 0, 0);
+  }
+}
+
+.ring-indicator {
+  animation: ring-pulse 2s infinite;
+}
