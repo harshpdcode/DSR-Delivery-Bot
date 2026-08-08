@@ -43,6 +43,27 @@ async def seed():
                 "password": "user123",
                 "role": UserRole.USER,
                 "phone": "+1987654321"
+            },
+            {
+                "email": "operator@example.com",
+                "full_name": "Sarah Jenkins (Fleet Control)",
+                "password": "operator123",
+                "role": UserRole.OPERATOR,
+                "phone": "+1555019200"
+            },
+            {
+                "email": "professor@example.com",
+                "full_name": "Dr. Aris Thorne (Faculty)",
+                "password": "prof123",
+                "role": UserRole.USER,
+                "phone": "+1555014300"
+            },
+            {
+                "email": "student@example.com",
+                "full_name": "Alex Rivera (Student)",
+                "password": "student123",
+                "role": UserRole.USER,
+                "phone": "+1555018800"
             }
         ]
         
@@ -50,7 +71,7 @@ async def seed():
             result = await session.execute(select(User).where(User.email == user_data["email"]))
             existing_user = result.scalars().first()
             if not existing_user:
-                print(f"Creating user {user_data['email']}...")
+                print(f"Creating demo user {user_data['email']} ({user_data['role']})...")
                 new_user = User(
                     email=user_data["email"],
                     full_name=user_data["full_name"],
