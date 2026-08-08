@@ -40,7 +40,21 @@ async def list_robots(
             pass
     query = query.order_by(Robot.name)
     result = await db.execute(query)
-    return result.scalars().all()
+    robots = result.scalars().all()
+
+    if not robots:
+        # Auto-seed initial fleet robots if DB is empty
+        robots_to_seed = [
+            Robot(name="DSR-Alpha 01", serial_number="DSR-SN-001", status=RobotStatus.IDLE, battery_level=95.0, location_lat=120.0, location_lng=320.0, payload_capacity_kg=15.0, firmware_version="2.4.1", model_type="Heavy Payload Bot"),
+            Robot(name="DSR-Beta 02", serial_number="DSR-SN-002", status=RobotStatus.IDLE, battery_level=88.0, location_lat=260.0, location_lng=150.0, payload_capacity_kg=10.0, firmware_version="2.4.1", model_type="Express Runner"),
+            Robot(name="DSR-Gamma 03", serial_number="DSR-SN-003", status=RobotStatus.CHARGING, battery_level=42.0, location_lat=180.0, location_lng=80.0, payload_capacity_kg=12.0, firmware_version="2.4.1", model_type="Standard Bot"),
+        ]
+        db.add_all(robots_to_seed)
+        await db.commit()
+        result = await db.execute(query)
+        robots = result.scalars().all()
+
+    return robots
 
 
 @router.get("/{robot_id}", response_model=RobotResponse)
