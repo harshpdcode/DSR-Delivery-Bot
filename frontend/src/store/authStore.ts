@@ -25,8 +25,10 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
-  token: typeof window !== "undefined" ? localStorage.getItem("dsr_delivery_bot_token") : null,
-  loading: false,
+  token: typeof window !== "undefined" ? localStorage.getItem("dsr_go_token") : null,
+  // Start loading=true immediately if a token exists so DashboardLayout shows
+  // the spinner from the first paint and never double-mounts its children.
+  loading: typeof window !== "undefined" ? !!localStorage.getItem("dsr_go_token") : false,
   error: null,
 
   initialize: async () => {
@@ -49,7 +51,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         set({ user, loading: false });
       } else {
         // Token is invalid/expired
-        localStorage.removeItem("dsr_delivery_bot_token");
+        localStorage.removeItem("dsr_go_token");
         set({ token: null, user: null, loading: false });
       }
     } catch (err: any) {
@@ -74,7 +76,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
 
       const data = await res.json();
-      localStorage.setItem("dsr_delivery_bot_token", data.access_token);
+      localStorage.setItem("dsr_go_token", data.access_token);
       set({ token: data.access_token });
 
       // Fetch user profile
@@ -122,7 +124,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   logout: () => {
-    localStorage.removeItem("dsr_delivery_bot_token");
+    localStorage.removeItem("dsr_go_token");
     set({ user: null, token: null });
   },
 

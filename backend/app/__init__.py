@@ -1,1 +1,1 @@
-# DSR Delivery Bot Backend Application
+# DSR Go Backend Application

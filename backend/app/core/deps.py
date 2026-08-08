@@ -1,5 +1,5 @@
 """
-DSR Delivery Bot â€” Auth Dependencies
+DSR Go Ã¢â‚¬â€ Auth Dependencies
 FastAPI dependencies for extracting and validating the current user from JWT.
 """
 

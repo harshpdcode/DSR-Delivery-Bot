@@ -15,9 +15,13 @@ import {
   Menu, 
   X, 
   User as UserIcon,
-  PackageCheck
+  PackageCheck,
+  KeyRound,
+  Users,
+  Cpu
 } from "lucide-react";
 import { toast } from "sonner";
+import InstallPwaPrompt from "@/components/InstallPwaPrompt";
 
 export default function DashboardLayout({
   children,
@@ -41,7 +45,7 @@ export default function DashboardLayout({
       <div className="min-h-screen flex items-center justify-center bg-surface-0">
         <div className="relative flex flex-col items-center">
           <LoaderSpinner />
-          <p className="mt-4 text-brand-gray/60 font-medium">Verifying access...</p>
+          <p className="mt-4 text-brand-gray/60 font-medium">{"Verifying access..."}</p>
         </div>
       </div>
     );
@@ -53,23 +57,37 @@ export default function DashboardLayout({
     router.push("/login");
   };
 
-  const navItems = [
+  const isAdminOrOperator = user?.role === "admin" || user?.role === "operator";
+
+  // Items visible to ALL authenticated users
+  const commonNavItems = [
     { name: "Overview", href: "/dashboard", icon: LayoutDashboard },
-    { name: "Fleet Management", href: "/dashboard/robots", icon: Bot },
+    { name: "OTP Parcel Unlock", href: "/dashboard/otp", icon: KeyRound },
     { name: "Request Delivery", href: "/dashboard/delivery/new", icon: PlusSquare },
-    { name: "Analytics", href: "/dashboard/analytics", icon: BarChart3 },
     { name: "Notifications", href: "/dashboard/notifications", icon: Bell },
     { name: "Settings", href: "/dashboard/settings", icon: SettingsIcon },
   ];
 
+  // Items visible ONLY to admin / operator roles
+  const adminNavItems = isAdminOrOperator
+    ? [
+        { name: "Fleet Management", href: "/dashboard/robots", icon: Bot },
+        { name: "Analytics", href: "/dashboard/analytics", icon: BarChart3 },
+        { name: "Simulator", href: "/dashboard/simulator", icon: Cpu },
+        { name: "User Management", href: "/dashboard/users", icon: Users },
+      ]
+    : [];
+
+  const navItems = [...commonNavItems, ...adminNavItems];
+
   return (
     <div className="min-h-screen bg-surface-0 flex">
-      {/* â”€â”€ Sidebar (Desktop) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
-      <aside className="hidden md:flex md:w-64 flex-col bg-surface-1 border-r border-surface-3 shrink-0">
+      {/* ── Sidebar (Desktop) ── */}
+      <aside className="hidden md:flex md:w-64 flex-col bg-surface-1 border-r border-surface-3 shrink-0 sticky top-0 h-screen z-30">
         <div className="p-6 border-b border-surface-3 flex items-center space-x-2">
           <Bot className="h-7 w-7 text-brand-lime animate-robot-move" />
           <span className="text-lg font-bold tracking-wider text-brand-white">
-            DSR Delivery <span className="text-brand-lime">Bot</span>
+            {"DSR Delivery "} <span className="text-brand-lime">{"Bot"}</span>
           </span>
         </div>
 
@@ -109,19 +127,19 @@ export default function DashboardLayout({
             className="w-full flex items-center space-x-2 px-4 py-2.5 rounded-lg border border-surface-4 text-brand-gray/60 hover:text-status-error hover:bg-status-error/10 hover:border-status-error/20 transition-colors text-caption font-bold"
           >
             <LogOut className="h-4.5 w-4.5" />
-            <span>Sign Out</span>
+            <span>{"Sign Out"}</span>
           </button>
         </div>
       </aside>
 
-      {/* â”€â”€ Mobile Sidebar Drawer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ── Mobile Sidebar Drawer ── */}
       {sidebarOpen && (
         <div className="fixed inset-0 z-50 flex md:hidden bg-surface-0/80 backdrop-blur-sm">
           <aside className="w-64 bg-surface-1 border-r border-surface-3 flex flex-col h-full">
             <div className="p-6 border-b border-surface-3 flex justify-between items-center">
               <div className="flex items-center space-x-2">
                 <Bot className="h-7 w-7 text-brand-lime" />
-                <span className="text-lg font-bold tracking-wider text-brand-white">DSR Delivery Bot</span>
+                <span className="text-lg font-bold tracking-wider text-brand-white">{"DSR Go"}</span>
               </div>
               <button onClick={() => setSidebarOpen(false)} className="text-brand-gray">
                 <X className="h-6 w-6" />
@@ -153,14 +171,14 @@ export default function DashboardLayout({
                 className="w-full flex items-center space-x-2 px-4 py-2.5 rounded-lg border border-surface-4 text-brand-gray/60 hover:text-status-error hover:bg-status-error/10 hover:border-status-error/20 transition-colors text-caption font-bold"
               >
                 <LogOut className="h-4.5 w-4.5" />
-                <span>Sign Out</span>
+                <span>{"Sign Out"}</span>
               </button>
             </div>
           </aside>
         </div>
       )}
 
-      {/* â”€â”€ Main Content Area â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ── Main Content Area ── */}
       <div className="flex-1 flex flex-col min-w-0 overflow-x-hidden">
         {/* Header */}
         <header className="h-16 bg-surface-1 border-b border-surface-3 flex items-center justify-between px-6 shrink-0 z-20">
@@ -177,13 +195,16 @@ export default function DashboardLayout({
           </div>
 
           <div className="flex items-center space-x-4">
+            {/* Install PWA Button */}
+            <InstallPwaPrompt />
+
             {/* Quick action button */}
             <Link 
               href="/dashboard/delivery/new" 
               className="hidden sm:flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-brand-lime text-brand-black text-caption font-bold hover:shadow-glow-lime transition-all"
             >
               <PlusSquare className="h-4 w-4" />
-              <span>New Delivery</span>
+              <span>{"New Delivery"}</span>
             </Link>
 
             {/* Notification Badge */}

@@ -1,7 +1,7 @@
-# AGENT_MEMORY.md â€” DSR Delivery Bot Project State
+# AGENT_MEMORY.md Ã¢â‚¬â€ DSR Go Project State
 
 > **Last Updated:** 2026-05-22T13:56:00+05:30
-> **Project:** DSR Delivery Bot â€” Smart Autonomous Campus Delivery Robot Platform
+> **Project:** DSR Go Ã¢â‚¬â€ Smart Autonomous Campus Delivery Robot Platform
 > **Client:** Silver Oak University, Ahmedabad
 > **Stack:** FastAPI + PostgreSQL + Redis + MQTT + Celery | Next.js 15 (App Router) + TailwindCSS + Recharts + Zustand
 
@@ -11,11 +11,11 @@
 
 | Phase | Status | Notes |
 |---|---|---|
-| Phase 1 â€” Root Scaffold | âœ… COMPLETE | `.env`, `.gitignore`, `README.md`, Docker files, CI/CD |
-| Phase 2 â€” Backend (FastAPI) | âœ… COMPLETE | All routers, models, Alembic, Celery, MQTT |
-| Phase 3 â€” Frontend (Next.js 15) | âœ… COMPLETE | All pages created and wired |
-| Phase 4 â€” Docker & Nginx | âœ… COMPLETE | docker-compose.yml, prod, nginx.conf, Dockerfiles |
-| Phase 5 â€” Docs & Polish | ðŸ”„ IN PROGRESS | README exists, need SETUP.md, DEPLOYMENT.md, API.md |
+| Phase 1 Ã¢â‚¬â€ Root Scaffold | Ã¢Å“â€¦ COMPLETE | `.env`, `.gitignore`, `README.md`, Docker files, CI/CD |
+| Phase 2 Ã¢â‚¬â€ Backend (FastAPI) | Ã¢Å“â€¦ COMPLETE | All routers, models, Alembic, Celery, MQTT |
+| Phase 3 Ã¢â‚¬â€ Frontend (Next.js 15) | Ã¢Å“â€¦ COMPLETE | All pages created and wired |
+| Phase 4 Ã¢â‚¬â€ Docker & Nginx | Ã¢Å“â€¦ COMPLETE | docker-compose.yml, prod, nginx.conf, Dockerfiles |
+| Phase 5 Ã¢â‚¬â€ Docs & Polish | Ã°Å¸â€â€ž IN PROGRESS | README exists, need SETUP.md, DEPLOYMENT.md, API.md |
 
 ---
 
@@ -23,103 +23,103 @@
 
 ```
 DSR delivery bot/
-â”œâ”€â”€ .env                          # Populated env vars (dev)
-â”œâ”€â”€ .env.example                  # Template for new devs
-â”œâ”€â”€ .gitignore
-â”œâ”€â”€ README.md
-â”œâ”€â”€ AGENT_MEMORY.md               # â† THIS FILE
-â”œâ”€â”€ docker-compose.yml            # Dev compose (7 services)
-â”œâ”€â”€ docker-compose.prod.yml       # Production compose
-â”‚
-â”œâ”€â”€ .github/
-â”‚   â””â”€â”€ workflows/
-â”‚       â”œâ”€â”€ ci.yml                # Lint + Type-check + Build
-â”‚       â””â”€â”€ cd.yml                # Docker deploy workflow
-â”‚
-â”œâ”€â”€ docker/
-â”‚   â”œâ”€â”€ nginx/
-â”‚   â”‚   â””â”€â”€ nginx.conf            # Reverse proxy: /api â†’ backend, / â†’ frontend, /ws â†’ WS
-â”‚   â””â”€â”€ mosquitto/
-â”‚       â””â”€â”€ mosquitto.conf
-â”‚
-â”œâ”€â”€ backend/
-â”‚   â”œâ”€â”€ Dockerfile
-â”‚   â”œâ”€â”€ requirements.txt
-â”‚   â”œâ”€â”€ alembic.ini
-â”‚   â”œâ”€â”€ alembic/
-â”‚   â”‚   â”œâ”€â”€ env.py                # Async Alembic config
-â”‚   â”‚   â”œâ”€â”€ script.py.mako
-â”‚   â”‚   â””â”€â”€ versions/.gitkeep
-â”‚   â””â”€â”€ app/
-â”‚       â”œâ”€â”€ __init__.py
-â”‚       â”œâ”€â”€ main.py               # FastAPI app, lifespan, middleware, router mounts
-â”‚       â”œâ”€â”€ celery_app.py         # Celery config (Redis broker)
-â”‚       â”œâ”€â”€ core/
-â”‚       â”‚   â”œâ”€â”€ config.py         # Pydantic Settings (from .env)
-â”‚       â”‚   â”œâ”€â”€ database.py       # AsyncSession + engine (PostgreSQL)
-â”‚       â”‚   â”œâ”€â”€ redis.py          # aioredis connection
-â”‚       â”‚   â”œâ”€â”€ security.py       # JWT create/decode, bcrypt hash/verify
-â”‚       â”‚   â”œâ”€â”€ deps.py           # get_current_user, require_role dependencies
-â”‚       â”‚   â””â”€â”€ mqtt.py           # MQTT client service
-â”‚       â”œâ”€â”€ models/
-â”‚       â”‚   â”œâ”€â”€ __init__.py       # Registers all models for Alembic
-â”‚       â”‚   â”œâ”€â”€ user.py           # User + UserRole enum
-â”‚       â”‚   â”œâ”€â”€ robot.py          # Robot + RobotStatus enum
-â”‚       â”‚   â”œâ”€â”€ delivery.py       # Delivery + DeliveryStatus enum + CampusBlock enum
-â”‚       â”‚   â””â”€â”€ supporting.py     # Telemetry, RobotHealth, OTPLog, Notification, DeliveryHistory, AuditLog
-â”‚       â”œâ”€â”€ schemas/
-â”‚       â”‚   â”œâ”€â”€ __init__.py
-â”‚       â”‚   â””â”€â”€ schemas.py        # All Pydantic request/response models
-â”‚       â”œâ”€â”€ routers/
-â”‚       â”‚   â”œâ”€â”€ __init__.py
-â”‚       â”‚   â”œâ”€â”€ auth.py           # POST /register, /login, /refresh, GET /me, POST /logout
-â”‚       â”‚   â”œâ”€â”€ robots.py         # GET /robots, GET /robots/{id}, PUT /robots/{id}/status, GET /health, GET /telemetry
-â”‚       â”‚   â”œâ”€â”€ deliveries.py     # CRUD + /start, /complete
-â”‚       â”‚   â”œâ”€â”€ otp.py            # POST /generate, /verify
-â”‚       â”‚   â”œâ”€â”€ analytics.py      # GET /overview, /deliveries, /robots, /heatmap
-â”‚       â”‚   â””â”€â”€ tracking.py       # WebSocket /ws/tracking/{delivery_id}, /ws/notifications/{user_id}
-â”‚       â”œâ”€â”€ services/
-â”‚       â”‚   â””â”€â”€ (future services)
-â”‚       â””â”€â”€ tasks/
-â”‚           â””â”€â”€ tasks.py          # Celery tasks (push notification, OTP expiry, telemetry aggregation)
-â”‚
-â””â”€â”€ frontend/
-    â”œâ”€â”€ Dockerfile
-    â”œâ”€â”€ package.json              # Next 15, React 19, recharts, zustand, lucide, sonner, mapbox-gl, framer-motion
-    â”œâ”€â”€ tsconfig.json             # @/* â†’ ./src/*
-    â”œâ”€â”€ next.config.ts            # Rewrites: /api â†’ backend:8000, /ws â†’ backend:8000
-    â”œâ”€â”€ tailwind.config.js        # Custom theme (brand, surface, status colors)
-    â”œâ”€â”€ postcss.config.js
-    â””â”€â”€ src/
-        â”œâ”€â”€ store/
-        â”‚   â””â”€â”€ authStore.ts      # Zustand: user, token, login(), register(), logout(), initialize()
-        â””â”€â”€ app/
-            â”œâ”€â”€ globals.css       # @tailwind directives, glassmorphism, scrollbar, ring-indicator animation
-            â”œâ”€â”€ layout.tsx        # Root layout with Inter font, <Providers>
-            â”œâ”€â”€ providers.tsx     # QueryClientProvider + Sonner Toaster
-            â”œâ”€â”€ page.tsx          # Landing/marketing page (animated hero)
-            â”œâ”€â”€ login/
-            â”‚   â””â”€â”€ page.tsx      # Zod + React Hook Form login
-            â”œâ”€â”€ register/
-            â”‚   â””â”€â”€ page.tsx      # Zod + React Hook Form register
-            â””â”€â”€ dashboard/
-                â”œâ”€â”€ layout.tsx    # Sidebar + Header + Auth guard + Mobile drawer
-                â”œâ”€â”€ page.tsx      # Overview metrics dashboard
-                â”œâ”€â”€ robots/
-                â”‚   â”œâ”€â”€ page.tsx  # Fleet grid (battery bars, status badges)
-                â”‚   â””â”€â”€ [id]/
-                â”‚       â””â”€â”€ page.tsx  # Diagnostics: specs, sensor array, telemetry logs, control panel override
-                â”œâ”€â”€ delivery/
-                â”‚   â”œâ”€â”€ new/
-                â”‚   â”‚   â””â”€â”€ page.tsx  # New delivery form (robot + block select)
-                â”‚   â””â”€â”€ [id]/
-                â”‚       â””â”€â”€ page.tsx  # Live Tracking: SVG campus map, OTP flow, WebSocket telemetry
-                â”œâ”€â”€ analytics/
-                â”‚   â””â”€â”€ page.tsx  # AreaChart trends, PieChart heatmap, BarChart fleet, metrics cards
-                â”œâ”€â”€ notifications/
-                â”‚   â””â”€â”€ page.tsx  # Real-time WS alerts, localStorage persistence, Sonner toasts
-                â””â”€â”€ settings/
-                    â””â”€â”€ page.tsx  # Profile, preference toggles, developer JWT tools
+Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ .env                          # Populated env vars (dev)
+Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ .env.example                  # Template for new devs
+Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ .gitignore
+Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ README.md
+Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ AGENT_MEMORY.md               # Ã¢â€ Â THIS FILE
+Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ docker-compose.yml            # Dev compose (7 services)
+Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ docker-compose.prod.yml       # Production compose
+Ã¢â€â€š
+Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ .github/
+Ã¢â€â€š   Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ workflows/
+Ã¢â€â€š       Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ ci.yml                # Lint + Type-check + Build
+Ã¢â€â€š       Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ cd.yml                # Docker deploy workflow
+Ã¢â€â€š
+Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ docker/
+Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ nginx/
+Ã¢â€â€š   Ã¢â€â€š   Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ nginx.conf            # Reverse proxy: /api Ã¢â€ â€™ backend, / Ã¢â€ â€™ frontend, /ws Ã¢â€ â€™ WS
+Ã¢â€â€š   Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ mosquitto/
+Ã¢â€â€š       Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ mosquitto.conf
+Ã¢â€â€š
+Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ backend/
+Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ Dockerfile
+Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ requirements.txt
+Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ alembic.ini
+Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ alembic/
+Ã¢â€â€š   Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ env.py                # Async Alembic config
+Ã¢â€â€š   Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ script.py.mako
+Ã¢â€â€š   Ã¢â€â€š   Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ versions/.gitkeep
+Ã¢â€â€š   Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ app/
+Ã¢â€â€š       Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ __init__.py
+Ã¢â€â€š       Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ main.py               # FastAPI app, lifespan, middleware, router mounts
+Ã¢â€â€š       Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ celery_app.py         # Celery config (Redis broker)
+Ã¢â€â€š       Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ core/
+Ã¢â€â€š       Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ config.py         # Pydantic Settings (from .env)
+Ã¢â€â€š       Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ database.py       # AsyncSession + engine (PostgreSQL)
+Ã¢â€â€š       Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ redis.py          # aioredis connection
+Ã¢â€â€š       Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ security.py       # JWT create/decode, bcrypt hash/verify
+Ã¢â€â€š       Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ deps.py           # get_current_user, require_role dependencies
+Ã¢â€â€š       Ã¢â€â€š   Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ mqtt.py           # MQTT client service
+Ã¢â€â€š       Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ models/
+Ã¢â€â€š       Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ __init__.py       # Registers all models for Alembic
+Ã¢â€â€š       Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ user.py           # User + UserRole enum
+Ã¢â€â€š       Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ robot.py          # Robot + RobotStatus enum
+Ã¢â€â€š       Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ delivery.py       # Delivery + DeliveryStatus enum + CampusBlock enum
+Ã¢â€â€š       Ã¢â€â€š   Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ supporting.py     # Telemetry, RobotHealth, OTPLog, Notification, DeliveryHistory, AuditLog
+Ã¢â€â€š       Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ schemas/
+Ã¢â€â€š       Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ __init__.py
+Ã¢â€â€š       Ã¢â€â€š   Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ schemas.py        # All Pydantic request/response models
+Ã¢â€â€š       Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ routers/
+Ã¢â€â€š       Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ __init__.py
+Ã¢â€â€š       Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ auth.py           # POST /register, /login, /refresh, GET /me, POST /logout
+Ã¢â€â€š       Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ robots.py         # GET /robots, GET /robots/{id}, PUT /robots/{id}/status, GET /health, GET /telemetry
+Ã¢â€â€š       Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ deliveries.py     # CRUD + /start, /complete
+Ã¢â€â€š       Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ otp.py            # POST /generate, /verify
+Ã¢â€â€š       Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ analytics.py      # GET /overview, /deliveries, /robots, /heatmap
+Ã¢â€â€š       Ã¢â€â€š   Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ tracking.py       # WebSocket /ws/tracking/{delivery_id}, /ws/notifications/{user_id}
+Ã¢â€â€š       Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ services/
+Ã¢â€â€š       Ã¢â€â€š   Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ (future services)
+Ã¢â€â€š       Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ tasks/
+Ã¢â€â€š           Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ tasks.py          # Celery tasks (push notification, OTP expiry, telemetry aggregation)
+Ã¢â€â€š
+Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ frontend/
+    Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ Dockerfile
+    Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ package.json              # Next 15, React 19, recharts, zustand, lucide, sonner, mapbox-gl, framer-motion
+    Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ tsconfig.json             # @/* Ã¢â€ â€™ ./src/*
+    Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ next.config.ts            # Rewrites: /api Ã¢â€ â€™ backend:8000, /ws Ã¢â€ â€™ backend:8000
+    Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ tailwind.config.js        # Custom theme (brand, surface, status colors)
+    Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ postcss.config.js
+    Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ src/
+        Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ store/
+        Ã¢â€â€š   Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ authStore.ts      # Zustand: user, token, login(), register(), logout(), initialize()
+        Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ app/
+            Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ globals.css       # @tailwind directives, glassmorphism, scrollbar, ring-indicator animation
+            Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ layout.tsx        # Root layout with Inter font, <Providers>
+            Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ providers.tsx     # QueryClientProvider + Sonner Toaster
+            Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ page.tsx          # Landing/marketing page (animated hero)
+            Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ login/
+            Ã¢â€â€š   Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ page.tsx      # Zod + React Hook Form login
+            Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ register/
+            Ã¢â€â€š   Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ page.tsx      # Zod + React Hook Form register
+            Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ dashboard/
+                Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ layout.tsx    # Sidebar + Header + Auth guard + Mobile drawer
+                Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ page.tsx      # Overview metrics dashboard
+                Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ robots/
+                Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ page.tsx  # Fleet grid (battery bars, status badges)
+                Ã¢â€â€š   Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ [id]/
+                Ã¢â€â€š       Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ page.tsx  # Diagnostics: specs, sensor array, telemetry logs, control panel override
+                Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ delivery/
+                Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ new/
+                Ã¢â€â€š   Ã¢â€â€š   Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ page.tsx  # New delivery form (robot + block select)
+                Ã¢â€â€š   Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ [id]/
+                Ã¢â€â€š       Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ page.tsx  # Live Tracking: SVG campus map, OTP flow, WebSocket telemetry
+                Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ analytics/
+                Ã¢â€â€š   Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ page.tsx  # AreaChart trends, PieChart heatmap, BarChart fleet, metrics cards
+                Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ notifications/
+                Ã¢â€â€š   Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ page.tsx  # Real-time WS alerts, localStorage persistence, Sonner toasts
+                Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ settings/
+                    Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ page.tsx  # Profile, preference toggles, developer JWT tools
 ```
 
 ---
@@ -159,7 +159,7 @@ All routers mounted under `prefix="/api/v1"` except tracking WebSockets.
 | Method | Path | Purpose |
 |---|---|---|
 | POST | `/generate` | Generate 6-digit OTP |
-| POST | `/verify` | Verify OTP â†’ unlock compartment |
+| POST | `/verify` | Verify OTP Ã¢â€ â€™ unlock compartment |
 
 ### Analytics (`/api/v1/analytics`)
 | Method | Path | Purpose |
@@ -200,11 +200,11 @@ All routers mounted under `prefix="/api/v1"` except tracking WebSockets.
 
 ### Typography
 - **Font:** Inter (Google Fonts), SF Pro Display fallback
-- **Sizes:** `display-lg` (3.5rem) â†’ `display` (2.5rem) â†’ `heading` (1.75rem) â†’ `title` (1.25rem) â†’ `body` (0.9375rem) â†’ `caption` (0.8125rem) â†’ `micro` (0.6875rem)
+- **Sizes:** `display-lg` (3.5rem) Ã¢â€ â€™ `display` (2.5rem) Ã¢â€ â€™ `heading` (1.75rem) Ã¢â€ â€™ `title` (1.25rem) Ã¢â€ â€™ `body` (0.9375rem) Ã¢â€ â€™ `caption` (0.8125rem) Ã¢â€ â€™ `micro` (0.6875rem)
 
 ### UI Patterns
-- **Glassmorphism:** `glassmorphism` utility class â†’ `bg-surface-2/60 backdrop-blur-md border border-surface-4/40`
-- **Shadows:** `shadow-glow-lime` â†’ `0 0 20px rgba(198,255,0,0.3)`
+- **Glassmorphism:** `glassmorphism` utility class Ã¢â€ â€™ `bg-surface-2/60 backdrop-blur-md border border-surface-4/40`
+- **Shadows:** `shadow-glow-lime` Ã¢â€ â€™ `0 0 20px rgba(198,255,0,0.3)`
 - **Animations:** `fade-in`, `slide-up`, `slide-in-right`, `pulse-slow`, `spin-slow`, `robot-move`
 - **Cards:** Rounded `2xl`/`3xl` with `border border-surface-4` + hover `border-brand-lime/20`
 
@@ -235,11 +235,11 @@ All routers mounted under `prefix="/api/v1"` except tracking WebSockets.
 
 | Service | Image | Port | Notes |
 |---|---|---|---|
-| `postgres` | postgres:16-alpine | 5432 | DB: `dsr_delivery_bot`, User: `dsr_delivery_bot_user` |
+| `postgres` | postgres:16-alpine | 5432 | DB: `dsr_go`, User: `dsr_go_user` |
 | `redis` | redis:7-alpine | 6379 | Celery broker + caching |
 | `mqtt` | eclipse-mosquitto:2 | 1883, 9001 | Robot telemetry MQTT broker |
 | `backend` | Custom (Dockerfile) | 8000 | Uvicorn with `--reload` |
-| `celery` | Same as backend | â€” | 4 workers |
+| `celery` | Same as backend | Ã¢â‚¬â€ | 4 workers |
 | `frontend` | Custom (Dockerfile) | 3000 | `npm run dev --turbopack` |
 | `nginx` | nginx:alpine | 80, 443 | Reverse proxy |
 
@@ -283,9 +283,9 @@ All routers mounted under `prefix="/api/v1"` except tracking WebSockets.
 
 ## 9. Pending Tasks
 
-- [x] Create `/docs/SETUP.md` â€” Local development setup guide
-- [x] Create `/docs/DEPLOYMENT.md` â€” Docker + production deployment guide
-- [x] Create `/docs/API.md` â€” Full API reference documentation
+- [x] Create `/docs/SETUP.md` Ã¢â‚¬â€ Local development setup guide
+- [x] Create `/docs/DEPLOYMENT.md` Ã¢â‚¬â€ Docker + production deployment guide
+- [x] Create `/docs/API.md` Ã¢â‚¬â€ Full API reference documentation
 - [x] Run `npm install` + `npm run build` for frontend type verification
 - [x] Update `task.md` artifact with final completion status
 - [x] Create `walkthrough.md` artifact summarizing all changes
@@ -296,9 +296,9 @@ All routers mounted under `prefix="/api/v1"` except tracking WebSockets.
 
 | Issue | Status | Notes |
 |---|---|---|
-| `next` command not found | ðŸ”§ FIX: Run `npm install` first | node_modules not committed; needs install on fresh clone |
-| eslint-visitor-keys engine warning | âš ï¸ WARN | Non-blocking; requires Node â‰¥20.19 for full compat |
-| `@types/mapbox-gl` deprecated | âš ï¸ WARN | mapbox-gl ships own types now; can remove from devDeps |
+| `next` command not found | Ã°Å¸â€Â§ FIX: Run `npm install` first | node_modules not committed; needs install on fresh clone |
+| eslint-visitor-keys engine warning | Ã¢Å¡Â Ã¯Â¸Â WARN | Non-blocking; requires Node Ã¢â€°Â¥20.19 for full compat |
+| `@types/mapbox-gl` deprecated | Ã¢Å¡Â Ã¯Â¸Â WARN | mapbox-gl ships own types now; can remove from devDeps |
 
 ---
 
@@ -319,15 +319,15 @@ Used in `/dashboard/delivery/[id]` tracking page:
 ## 12. Environment Variables (from `.env`)
 
 ```
-APP_NAME=DSR Delivery Bot
+APP_NAME=DSR Go
 APP_VERSION=1.0.0
 APP_ENV=development
 SECRET_KEY=<jwt-secret>
 POSTGRES_HOST=postgres (docker) / localhost (local)
 POSTGRES_PORT=5432
-POSTGRES_DB=dsr_delivery_bot
-POSTGRES_USER=dsr_delivery_bot_user
-POSTGRES_PASSWORD=dsr_delivery_bot_dev_pass
+POSTGRES_DB=dsr_go
+POSTGRES_USER=dsr_go_user
+POSTGRES_PASSWORD=dsr_go_dev_pass
 REDIS_HOST=redis (docker) / localhost (local)
 REDIS_PORT=6379
 MQTT_BROKER_HOST=mqtt (docker) / localhost (local)

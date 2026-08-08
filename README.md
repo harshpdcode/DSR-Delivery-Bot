@@ -1,96 +1,90 @@
-# DSR Delivery Bot â€” Smart Autonomous Campus Delivery Robot System
+# 🤖 DSR Go — Autonomous Campus Delivery Robot System
 
-DSR Delivery Bot is a production-grade autonomous robot delivery platform designed for Silver Oak University, Ahmedabad. The system coordinates a fleet of autonomous delivery robots, allowing users to send packages across different campus blocks, verify receipt using secure OTP-based compartment locking, and track the robot's real-time position on a live Mapbox dashboard.
-
-## ðŸš€ Key Features
-
-* **Real-time Live Tracking**: Live telemetry (latitude, longitude, speed, battery, heading) broadcasted via MQTT from robots, aggregated in FastAPI, and pushed to Next.js via WebSockets.
-* **OTP Secure Delivery**: Two-factor verification for unlocking the robot's delivery compartment upon arrival.
-* **Intelligent Fleet Management**: Monitor robot status, sensor health, and battery levels dynamically.
-* **Next.js 15 UI**: Dark mode first, premium aesthetics using Tailwind, Framer Motion, and shadcn/ui components.
-* **FastAPI Backend**: Async SQLAlchemy, PostgreSQL database, Redis caching, Celery background tasks, and native WebSockets.
-* **Dockerized Setup**: Multi-container architecture with PostgreSQL, Redis, Mosquitto MQTT, Celery, FastAPI, Next.js, and Nginx.
+> **Smart Autonomous Campus Delivery Robot Platform for Silver Oak University**  
+> A full-stack, real-time autonomous robot delivery system featuring live telemetry tracking, OTP-based secure compartment unlocking, sender/receiver audit trails, and interactive fleet simulation.
 
 ---
 
-## ðŸ—ï¸ Architecture
+## ✨ Features
+
+- **🚀 One-Command Launch**: Run both Next.js frontend and FastAPI backend with a single `npm run dev` command.
+- **📍 Real-Time Telemetry Tracking**: Live map featuring animated robot movement, heading direction, speed, battery level, and Silver Oak campus block waypoints (A, B, C, D, E Blocks).
+- **🔑 Secure OTP Cargo Unlock**: Deterministic 6-digit OTP code generation with one-click copy button for senders and an interactive PIN keypad station for receivers.
+- **🛡️ Sender & Receiver Audit Trail**: Complete record logging of order creator, package retriever, verification timestamps, and compartment hatch disengagement notes.
+- **🤖 Fleet Management & Simulator**: Admin fleet controls to manage robot statuses (Idle, En Route, Charging, Offline), view sensor telemetry, and simulate campus navigation.
+- **🎨 Modern Dark UI**: Sleek glassmorphism aesthetic with responsive sidebars (sticky for users, scrollable for admins).
+
+---
+
+## 🛠️ Technology Stack
+
+- **Frontend**: Next.js 15 (App Router, Turbopack), React 19, TypeScript, TailwindCSS, Lucide Icons, Sonner Toasts
+- **Backend**: Python 3.12, FastAPI, SQLAlchemy 2.0 (AsyncIO), Uvicorn, WebSockets, Pydantic v2
+- **Database**: SQLite (built-in fallback for zero-config dev) or PostgreSQL (`postgresql+asyncpg`)
+
+---
+
+## 🚀 Quick Start
+
+### 1. Clone the Repository
+```bash
+git clone https://github.com/YOUR_USERNAME/dsr-autonomous-delivery-system.git
+cd dsr-autonomous-delivery-system
+```
+
+### 2. Set Up Environment Files
+- Copy `.env.example` to `.env` in the root folder.
+
+### 3. Run the Development Server
+```bash
+npm run dev
+```
+
+The application will be accessible at:
+- **Frontend Dashboard**: `http://localhost:3000`
+- **Backend Swagger Docs**: `http://localhost:8000/docs`
+
+---
+
+## 🔐 Credentials (Demo / Testing)
+
+| Role | Email | Password | Phone |
+| :--- | :--- | :--- | :--- |
+| **Admin** | `test@example.com` | `password123` | `+1234567890` |
+| **User** | `user@example.com` | `password123` | `+1987654321` |
+
+---
+
+## 📁 Project Structure
 
 ```
-DSR Delivery Bot/
-â”œâ”€â”€ frontend/          â† Next.js 15 + TypeScript + Tailwind + shadcn/ui
-â”œâ”€â”€ backend/           â† FastAPI + PostgreSQL + Redis + MQTT
-â”œâ”€â”€ shared/            â† Shared TypeScript types / Pydantic schemas
-â”œâ”€â”€ docker/            â† Docker Compose + Nginx & Mosquitto configs
-â”œâ”€â”€ .github/           â† GitHub Actions CI/CD workflows
-â””â”€â”€ docs/              â† Detailed setup, deployment, and API guides
+DSR delivery bot/
+├── backend/                  # FastAPI Backend API
+│   ├── app/
+│   │   ├── core/            # Config, Security, Database
+│   │   ├── models/          # SQLAlchemy Models (Delivery, Robot, User, Supporting)
+│   │   ├── routers/         # API Routes (Auth, Deliveries, Robots, OTP, Analytics, Tracking)
+│   │   └── schemas/         # Pydantic Schemas
+│   ├── seed.py              # Auto-seeding script for initial database setup
+│   └── requirements.txt     # Python Dependencies
+├── frontend/                 # Next.js Frontend Application
+│   ├── src/
+│   │   ├── app/             # App Router Pages (/dashboard, /delivery, /otp, /simulator)
+│   │   ├── components/      # Reusable UI Components & Navigation Layouts
+│   │   └── store/           # Zustand Auth & State Management
+│   └── package.json
+├── DEPLOYMENT.md             # Production Deployment Guide
+├── .env.example              # Environment Variables Template
+└── package.json              # Root Concurrent Development Launcher
 ```
 
 ---
 
-## ðŸ› ï¸ Quick Start
+## 📖 Production Deployment
 
-### Prerequisites
-
-* Docker & Docker Compose
-* Mapbox Access Token (for live map tracking)
-
-### Running locally with Docker Compose
-
-1. **Clone the repository and copy the environment template**:
-   ```bash
-   copy .env.example .env
-   ```
-2. **Build and start the application**:
-   ```bash
-   docker-compose up --build
-   ```
-3. **Access the application components**:
-   * **Frontend**: `http://localhost:3000`
-   * **Backend API Docs**: `http://localhost:8000/docs`
-   * **Nginx Reverse Proxy**: `http://localhost:80`
-   * **MQTT Broker**: `localhost:1883`
+For complete instructions on deploying to cloud VPS, Render, Railway, or Vercel, check out the [DEPLOYMENT.md](DEPLOYMENT.md) guide.
 
 ---
 
-## ðŸ“‚ Development
-
-### Backend Setup (FastAPI)
-
-1. Navigate to `/backend`:
-   ```bash
-   cd backend
-   ```
-2. Create and activate a python virtual environment:
-   ```bash
-   python -m venv .venv
-   .venv\Scripts\activate
-   ```
-3. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-4. Run migrations and start the server:
-   ```bash
-   uvicorn app.main:app --reload
-   ```
-
-### Frontend Setup (Next.js)
-
-1. Navigate to `/frontend`:
-   ```bash
-   cd frontend
-   ```
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-3. Run in development mode:
-   ```bash
-   npm run dev
-   ```
-
----
-
-## ðŸ“œ License
-
-This project is licensed under the MIT License.
+## 📄 License
+MIT License. Created for Silver Oak University Campus Delivery Bot Project.

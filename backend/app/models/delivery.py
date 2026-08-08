@@ -1,5 +1,5 @@
 """
-DSR Delivery Bot â€” Delivery Model
+DSR Go Ã¢â‚¬â€ Delivery Model
 Tracks a single delivery mission from creation to completion.
 """
 
@@ -7,6 +7,7 @@ import enum
 from datetime import datetime, timezone
 
 from sqlalchemy import (
+    Boolean,
     Column,
     DateTime,
     Enum,
@@ -68,6 +69,7 @@ class Delivery(Base):
     package_description = Column(Text, nullable=True)
     package_weight_kg = Column(Float, nullable=True)
     priority = Column(String(20), default="normal", nullable=False)
+    is_preloaded = Column(Boolean, default=False, nullable=False)
 
     estimated_arrival = Column(DateTime(timezone=True), nullable=True)
     actual_arrival = Column(DateTime(timezone=True), nullable=True)

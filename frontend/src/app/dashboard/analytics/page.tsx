@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuthStore } from "@/store/authStore";
+import RoleGuard from "@/components/RoleGuard";
 import {
   BarChart,
   Bar,
@@ -33,7 +34,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-export default function AnalyticsPage() {
+function AnalyticsContent() {
   const { token } = useAuthStore();
   const [days, setDays] = useState<number>(30);
   const [mounted, setMounted] = useState<boolean>(false);
@@ -43,7 +44,7 @@ export default function AnalyticsPage() {
   }, []);
 
   // 1. Overview metrics
-  const { data: overview, isLoading: isOverviewLoading, refetch: refetchOverview } = useQuery({
+  const { data: overview, isLoading: isOverviewLoading, isError: isOverviewError, refetch: refetchOverview } = useQuery({
     queryKey: ["analyticsOverview"],
     queryFn: async () => {
       const res = await fetch("/api/v1/analytics/overview", {
@@ -53,10 +54,11 @@ export default function AnalyticsPage() {
       return res.json();
     },
     enabled: !!token,
+    retry: 1,
   });
 
   // 2. Delivery Trends
-  const { data: trends = [], isLoading: isTrendsLoading, refetch: refetchTrends } = useQuery({
+  const { data: trends = [], isLoading: isTrendsLoading, isError: isTrendsError, refetch: refetchTrends } = useQuery({
     queryKey: ["analyticsTrends", days],
     queryFn: async () => {
       const res = await fetch(`/api/v1/analytics/deliveries?days=${days}`, {
@@ -66,10 +68,11 @@ export default function AnalyticsPage() {
       return res.json();
     },
     enabled: !!token,
+    retry: 1,
   });
 
   // 3. Robot Efficiency
-  const { data: robotStats = [], isLoading: isRobotsLoading, refetch: refetchRobots } = useQuery({
+  const { data: robotStats = [], isLoading: isRobotsLoading, isError: isRobotsError, refetch: refetchRobots } = useQuery({
     queryKey: ["analyticsRobots"],
     queryFn: async () => {
       const res = await fetch("/api/v1/analytics/robots", {
@@ -79,10 +82,11 @@ export default function AnalyticsPage() {
       return res.json();
     },
     enabled: !!token,
+    retry: 1,
   });
 
   // 4. Heatmap
-  const { data: heatmap = [], isLoading: isHeatmapLoading, refetch: refetchHeatmap } = useQuery({
+  const { data: heatmap = [], isLoading: isHeatmapLoading, isError: isHeatmapError, refetch: refetchHeatmap } = useQuery({
     queryKey: ["analyticsHeatmap"],
     queryFn: async () => {
       const res = await fetch("/api/v1/analytics/heatmap", {
@@ -92,6 +96,7 @@ export default function AnalyticsPage() {
       return res.json();
     },
     enabled: !!token,
+    retry: 1,
   });
 
   const handleRefresh = () => {
@@ -115,6 +120,8 @@ export default function AnalyticsPage() {
       </div>
     );
   }
+
+  const anyError = isOverviewError || isTrendsError || isRobotsError || isHeatmapError;
 
   // Pre-seed some default charts mock data in case DB has no entries
   const defaultTrends = [
@@ -161,7 +168,27 @@ export default function AnalyticsPage() {
 
   return (
     <div className="space-y-8">
+      {/* Error Banner */}
+      {anyError && (
+        <div className="flex items-center justify-between p-4 rounded-xl bg-status-error/10 border border-status-error/20">
+          <div className="flex items-center gap-3">
+            <AlertTriangle className="h-5 w-5 text-status-error shrink-0" />
+            <div>
+              <p className="text-caption font-bold text-brand-white">Analytics Unavailable</p>
+              <p className="text-micro text-brand-gray/50">One or more data sources failed to load. Charts may show sample data.</p>
+            </div>
+          </div>
+          <button
+            onClick={handleRefresh}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-status-error/10 border border-status-error/20 text-status-error font-bold text-micro hover:bg-status-error/20 transition-all shrink-0"
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+            Retry All
+          </button>
+        </div>
+      )}
       {/* Header */}
+
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
         <div>
           <h1 className="text-display font-extrabold tracking-tight">Analytics Dashboard</h1>
@@ -398,5 +425,13 @@ export default function AnalyticsPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function AnalyticsPage() {
+  return (
+    <RoleGuard roles={["admin", "operator"]}>
+      <AnalyticsContent />
+    </RoleGuard>
   );
 }

@@ -1,12 +1,12 @@
-# DSR Delivery Bot â€” API Reference Documentation
+# DSR Go Ã¢â‚¬â€ API Reference Documentation
 
-This document contains a comprehensive description of the API endpoints, schemas, WebSockets, and MQTT topics exposed by the **DSR Delivery Bot (Smart Autonomous Campus Delivery Robot Platform)** backend.
+This document contains a comprehensive description of the API endpoints, schemas, WebSockets, and MQTT topics exposed by the **DSR Go (Smart Autonomous Campus Delivery Robot Platform)** backend.
 
 All REST endpoints (except WebSockets) are prefixed with `/api/v1` in production.
 
 ---
 
-## ðŸ” 1. Authentication Router (`/api/v1/auth`)
+## Ã°Å¸â€Â 1. Authentication Router (`/api/v1/auth`)
 
 These endpoints govern user registration, session establishment, and profile retrieval.
 
@@ -86,7 +86,7 @@ Retrieves details of the currently authenticated user session.
 
 ---
 
-## ðŸ¤– 2. Robot Management Router (`/api/v1/robots`)
+## Ã°Å¸Â¤â€“ 2. Robot Management Router (`/api/v1/robots`)
 
 Allows operators, administrators, and general users to search, inspect, and modify robot status and sensor telemetry.
 
@@ -171,7 +171,7 @@ Fetches a list of physical sensor health values (Lidar, GPS, Cameras, IMU, Batte
         "sensor_name": "Battery Temperature",
         "status": "healthy",
         "value": 34.2,
-        "unit": "Â°C",
+        "unit": "Ã‚Â°C",
         "message": "Optimal operating temperature",
         "recorded_at": "2026-05-22T13:45:00Z"
       }
@@ -198,7 +198,7 @@ Returns historical coordinate logging for path mapping.
 
 ---
 
-## ðŸ“¦ 3. Deliveries Router (`/api/v1/deliveries`)
+## Ã°Å¸â€œÂ¦ 3. Deliveries Router (`/api/v1/deliveries`)
 
 Directs all actions relating to creating and tracking robot payload delivery missions.
 
@@ -301,7 +301,7 @@ Manually completes the delivery (Operator role required, overrides OTP).
 
 ---
 
-## ðŸ”‘ 4. One-Time Password (OTP) Router (`/api/v1/otp`)
+## Ã°Å¸â€â€˜ 4. One-Time Password (OTP) Router (`/api/v1/otp`)
 
 Secures physical payload compartment unlocking.
 
@@ -343,7 +343,7 @@ Verifies the provided 6-digit OTP and unlocks the compartment.
 
 ---
 
-## ðŸ“Š 5. Analytics Router (`/api/v1/analytics`)
+## Ã°Å¸â€œÅ  5. Analytics Router (`/api/v1/analytics`)
 
 Exposes metrics for fleet performance, trends, and campus heatmap statistics.
 
@@ -402,7 +402,7 @@ Returns the destination block distribution of completed deliveries.
 
 ---
 
-## ðŸ“¡ 6. Live WebSockets & MQTT Topics
+## Ã°Å¸â€œÂ¡ 6. Live WebSockets & MQTT Topics
 
 ### WebSockets
 *   **`/ws/tracking/{delivery_id}`**: Broadcasts telemetry coordinates during robot transit.

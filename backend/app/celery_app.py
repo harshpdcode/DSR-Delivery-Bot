@@ -1,5 +1,5 @@
 """
-DSR Delivery Bot â€” Celery Worker Configuration
+DSR Go Ã¢â‚¬â€ Celery Worker Configuration
 Background task processing with Redis broker.
 """
 
@@ -10,7 +10,7 @@ from app.core.config import get_settings
 settings = get_settings()
 
 celery_app = Celery(
-    "dsr_delivery_bot",
+    "dsr_go",
     broker=settings.CELERY_BROKER_URL,
     backend=settings.CELERY_RESULT_BACKEND,
 )

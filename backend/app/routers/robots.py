@@ -1,5 +1,5 @@
 """
-DSR Delivery Bot â€” Robots Router
+DSR Go Ã¢â‚¬â€ Robots Router
 Fleet management: list, detail, status update, health, telemetry.
 """
 
@@ -109,6 +109,18 @@ async def get_robot_health(
     return result.scalars().all()
 
 
+from app.models.delivery import CampusBlock
+from app.schemas.schemas import (
+    MessageResponse,
+    RobotCompartmentRequest,
+    RobotDispatchRequest,
+    RobotHealthResponse,
+    RobotResponse,
+    RobotStatusUpdate,
+    TelemetryResponse,
+)
+
+
 @router.get("/{robot_id}/telemetry", response_model=List[TelemetryResponse])
 async def get_robot_telemetry(
     robot_id: int,
@@ -124,3 +136,91 @@ async def get_robot_telemetry(
         .limit(min(limit, 500))
     )
     return result.scalars().all()
+
+
+@router.post("/{robot_id}/compartment", response_model=MessageResponse)
+async def control_robot_compartment(
+    robot_id: int,
+    body: RobotCompartmentRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(
+        require_role(UserRole.ADMIN, UserRole.OPERATOR)
+    ),
+):
+    """Force open or close a robot compartment door (Admin/Operator only)."""
+    result = await db.execute(select(Robot).where(Robot.id == robot_id))
+    robot = result.scalar_one_or_none()
+    if not robot:
+        raise HTTPException(status_code=404, detail="Robot not found")
+
+    action_lower = body.action.lower()
+    if action_lower not in ("open", "close"):
+        raise HTTPException(status_code=400, detail="Action must be 'open' or 'close'")
+
+    # In hardware integration, this sends command over MQTT/WebSocket to ESP32 / ROS2
+    return MessageResponse(
+        message=f"Compartment for Robot '{robot.name}' successfully set to {action_lower.upper()}"
+    )
+
+
+@router.post("/{robot_id}/dispatch", response_model=RobotResponse)
+async def manual_dispatch_robot(
+    robot_id: int,
+    body: RobotDispatchRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(
+        require_role(UserRole.ADMIN, UserRole.OPERATOR)
+    ),
+):
+    """Manually dispatch a robot to a specific campus block (Admin/Operator only)."""
+    result = await db.execute(select(Robot).where(Robot.id == robot_id))
+    robot = result.scalar_one_or_none()
+    if not robot:
+        raise HTTPException(status_code=404, detail="Robot not found")
+
+    try:
+        target_block = CampusBlock(body.destination_block)
+    except ValueError:
+        raise HTTPException(status_code=400, detail=f"Invalid campus block: {body.destination_block}")
+
+    robot.status = RobotStatus.EN_ROUTE
+    robot.error_message = None
+    await db.flush()
+    await db.refresh(robot)
+    return robot
+
+
+@router.post("/{robot_id}/toggle-status", response_model=RobotResponse)
+async def toggle_robot_status(
+    robot_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(
+        require_role(UserRole.ADMIN, UserRole.OPERATOR)
+    ),
+):
+    """Toggle a robot between ACTIVE (IDLE) and INACTIVE (OFFLINE) states (Admin/Operator only)."""
+    result = await db.execute(
+        select(Robot).where(Robot.id == robot_id, Robot.deleted_at.is_(None))
+    )
+    robot = result.scalar_one_or_none()
+    if not robot:
+        raise HTTPException(status_code=404, detail="Robot not found")
+
+    # Only allow toggling if robot is not actively in use
+    non_toggleable = {RobotStatus.EN_ROUTE, RobotStatus.DELIVERING, RobotStatus.RETURNING}
+    if robot.status in non_toggleable:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Cannot toggle robot status while it is '{robot.status.value}'. Wait until delivery completes."
+        )
+
+    # Toggle: IDLE/CHARGING/ERROR -> OFFLINE, OFFLINE/MAINTENANCE -> IDLE
+    if robot.status == RobotStatus.OFFLINE:
+        robot.status = RobotStatus.IDLE
+        robot.error_message = None
+    else:
+        robot.status = RobotStatus.OFFLINE
+
+    await db.flush()
+    await db.refresh(robot)
+    return robot

@@ -1,4 +1,4 @@
-name: DSR Delivery Bot CD
+name: DSR Go CD
 
 on:
   push:
@@ -29,7 +29,7 @@ jobs:
           context: ./backend
           file: ./backend/Dockerfile
           push: false # Set to true when registry login is configured
-          tags: dsr_delivery_bot/backend:latest,dsr_delivery_bot/backend:${{ github.sha }}
+          tags: dsr_go/backend:latest,dsr_go/backend:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -39,7 +39,7 @@ jobs:
           context: ./frontend
           file: ./frontend/Dockerfile
           push: false # Set to true when registry login is configured
-          tags: dsr_delivery_bot/frontend:latest,dsr_delivery_bot/frontend:${{ github.sha }}
+          tags: dsr_go/frontend:latest,dsr_go/frontend:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -51,6 +51,6 @@ jobs:
       #     username: ${{ secrets.SSH_USER }}
       #     key: ${{ secrets.SSH_PRIVATE_KEY }}
       #     script: |
-      #       cd /opt/dsr_delivery_bot
+      #       cd /opt/dsr_go
       #       docker-compose -f docker-compose.prod.yml pull
       #       docker-compose -f docker-compose.prod.yml up -d

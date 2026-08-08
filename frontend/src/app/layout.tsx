@@ -9,8 +9,14 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "DSR Delivery Bot â€” Smart Autonomous Campus Delivery",
+  title: "DSR Go — Smart Autonomous Campus Delivery",
   description: "Advanced Fleet Management & Autonomous Robot Delivery Platform for Silver Oak University.",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "DSR Delivery",
+  },
 };
 
 export default function RootLayout({

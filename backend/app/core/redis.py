@@ -1,5 +1,5 @@
 """
-DSR Delivery Bot â€” Redis Client
+DSR Go Ã¢â‚¬â€ Redis Client
 Async Redis connection for caching and pub/sub.
 """
 
@@ -11,7 +11,7 @@ from app.core.config import get_settings
 
 settings = get_settings()
 
-# â”€â”€ Redis Client â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# Ã¢â€â‚¬Ã¢â€â‚¬ Redis Client Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 _redis_client: Optional[aioredis.Redis] = None
 
 
@@ -19,8 +19,11 @@ async def get_redis() -> aioredis.Redis:
     """Get or create the Redis client singleton."""
     global _redis_client
     if _redis_client is None:
+        url = settings.REDIS_URL
+        if "redis://redis:" in url:
+            url = url.replace("redis://redis:", "redis://localhost:")
         _redis_client = aioredis.from_url(
-            settings.REDIS_URL,
+            url,
             encoding="utf-8",
             decode_responses=True,
             max_connections=20,
@@ -32,11 +35,14 @@ async def close_redis() -> None:
     """Close the Redis connection."""
     global _redis_client
     if _redis_client is not None:
-        await _redis_client.close()
+        try:
+            await _redis_client.close()
+        except Exception:
+            pass
         _redis_client = None
 
 
-# â”€â”€ Cache Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# Ã¢â€â‚¬Ã¢â€â‚¬ Cache Helpers Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 async def cache_set(key: str, value: str, expire: int = 300) -> None:
     """Set a cache key with expiration (default: 5 min)."""
     client = await get_redis()

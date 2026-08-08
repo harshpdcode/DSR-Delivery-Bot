@@ -1,10 +1,10 @@
-# DSR Delivery Bot â€” Local Development Setup Guide
+# DSR Go Ã¢â‚¬â€ Local Development Setup Guide
 
-This document outlines the detailed instructions required to set up the **DSR Delivery Bot (Smart Autonomous Campus Delivery Robot Platform)** on a local machine for development and testing.
+This document outlines the detailed instructions required to set up the **DSR Go (Smart Autonomous Campus Delivery Robot Platform)** on a local machine for development and testing.
 
 ---
 
-## ðŸ“‹ Prerequisites
+## Ã°Å¸â€œâ€¹ Prerequisites
 
 Before starting, ensure you have the following software installed:
 
@@ -16,7 +16,7 @@ Before starting, ensure you have the following software installed:
 
 ---
 
-## ðŸ› ï¸ Step 1: Clone the Repository & Configure Environments
+## Ã°Å¸â€ºÂ Ã¯Â¸Â Step 1: Clone the Repository & Configure Environments
 
 1. Clone the project to your local workspace:
    ```bash
@@ -31,15 +31,15 @@ Before starting, ensure you have the following software installed:
 
 3. Update the variables in `.env` if necessary. The default configuration is tuned for a zero-configuration launch out of the box using Docker containers:
    ```env
-   APP_NAME=DSR Delivery Bot
+   APP_NAME=DSR Go
    APP_VERSION=1.0.0
    APP_ENV=development
    SECRET_KEY=dev_secret_key_change_me_in_production_1234567890
    POSTGRES_HOST=localhost
    POSTGRES_PORT=5432
-   POSTGRES_DB=dsr_delivery_bot
-   POSTGRES_USER=dsr_delivery_bot_user
-   POSTGRES_PASSWORD=dsr_delivery_bot_dev_pass
+   POSTGRES_DB=dsr_go
+   POSTGRES_USER=dsr_go_user
+   POSTGRES_PASSWORD=dsr_go_dev_pass
    REDIS_HOST=localhost
    REDIS_PORT=6379
    MQTT_BROKER_HOST=localhost
@@ -53,7 +53,7 @@ Before starting, ensure you have the following software installed:
 
 ---
 
-## ðŸ³ Step 2: Spin Up Infrastructure (PostgreSQL, Redis, MQTT)
+## Ã°Å¸ÂÂ³ Step 2: Spin Up Infrastructure (PostgreSQL, Redis, MQTT)
 
 The backend relies on three primary infrastructure pieces. Run them locally using Docker to avoid complex local database installations:
 
@@ -73,7 +73,7 @@ The backend relies on three primary infrastructure pieces. Run them locally usin
 
 ---
 
-## ðŸ Step 3: Backend Setup (FastAPI)
+## Ã°Å¸ÂÂ Step 3: Backend Setup (FastAPI)
 
 1. **Navigate to the backend folder**:
    ```bash
@@ -123,7 +123,7 @@ The backend relies on three primary infrastructure pieces. Run them locally usin
 
 ---
 
-## âš›ï¸ Step 4: Frontend Setup (Next.js 15)
+## Ã¢Å¡â€ºÃ¯Â¸Â Step 4: Frontend Setup (Next.js 15)
 
 1. **Open a new terminal window** and navigate to the `frontend` folder:
    ```bash
@@ -144,7 +144,7 @@ The backend relies on three primary infrastructure pieces. Run them locally usin
 
 ---
 
-## ðŸ§ª Step 5: Verification & Seeding Demo Data
+## Ã°Å¸Â§Âª Step 5: Verification & Seeding Demo Data
 
 Once both the backend and frontend are running, you can verify and populate the system with standard robot and delivery instances for testing.
 
@@ -177,7 +177,7 @@ You can mock robot telemetry updates by publishing JSON payloads to the `robot/+
 
 ---
 
-## ðŸ” Troubleshooting
+## Ã°Å¸â€Â Troubleshooting
 
 ### 1. Database Connection Errors
 *   Ensure that the `postgres` container is up and healthy.

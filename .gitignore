@@ -1,5 +1,5 @@
 # ========================
-# DSR Delivery Bot .gitignore
+# DSR Go .gitignore
 # ========================
 
 # Node / Next.js
@@ -70,6 +70,11 @@ yarn-error.log*
 coverage/
 .nyc_output/
 
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
 # Misc
 *.pem
 *.key
@@ -77,3 +82,4 @@ coverage/
 .cache/
 tmp/
 temp/
+run.txt

@@ -1,5 +1,5 @@
 # ========================
-# DSR Delivery Bot Backend Dependencies
+# DSR Go Backend Dependencies
 # ========================
 
 # FastAPI & Server

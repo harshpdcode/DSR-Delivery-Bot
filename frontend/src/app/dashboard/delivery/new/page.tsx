@@ -19,6 +19,7 @@ const deliverySchema = z.object({
   package_description: z.string().min(2, "Please describe the package"),
   package_weight_kg: z.coerce.number().min(0.1, "Weight must be at least 0.1 kg"),
   priority: z.enum(["low", "normal", "high"]),
+  is_preloaded: z.boolean().default(false),
 });
 
 type DeliveryFormValues = z.infer<typeof deliverySchema>;
@@ -29,7 +30,7 @@ export default function NewDeliveryPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Fetch available robots
-  const { data: robots = [], isLoading: loadingRobots } = useQuery({
+  const { data: robots = [], isLoading: loadingRobots, isError: robotsError } = useQuery({
     queryKey: ["robots"],
     queryFn: async () => {
       const res = await fetch("/api/v1/robots", {
@@ -39,6 +40,7 @@ export default function NewDeliveryPage() {
       return res.json();
     },
     enabled: !!token,
+    retry: 1,
   });
 
   const availableRobots = robots.filter(
@@ -49,6 +51,7 @@ export default function NewDeliveryPage() {
     register,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<DeliveryFormValues>({
     resolver: zodResolver(deliverySchema),
@@ -56,11 +59,13 @@ export default function NewDeliveryPage() {
       origin_block: "A Block",
       destination_block: "B Block",
       priority: "normal",
+      is_preloaded: false,
     },
   });
 
   const originBlock = watch("origin_block");
   const destinationBlock = watch("destination_block");
+  const isPreloaded = watch("is_preloaded");
 
   const onSubmit = async (values: DeliveryFormValues) => {
     if (values.origin_block === values.destination_block) {
@@ -100,11 +105,64 @@ export default function NewDeliveryPage() {
       <div>
         <h1 className="text-display font-extrabold tracking-tight">Request Delivery</h1>
         <p className="text-body text-brand-gray/50">
-          Select origin, destination, and package details to dispatch a delivery robot.
+          Choose workflow mode, routing, and package details to dispatch a delivery robot.
         </p>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+        {/* Delivery Workflow Mode */}
+        <div className="glassmorphism rounded-2xl p-6 border border-surface-4 space-y-4">
+          <label className="text-caption font-bold text-brand-white uppercase tracking-wider">
+            {"Select Delivery Workflow Mode"}
+          </label>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Mode 1: Fetch & Deliver */}
+            <div
+              onClick={() => setValue("is_preloaded", false)}
+              className={`cursor-pointer rounded-xl p-5 border-2 transition-all flex flex-col justify-between ${
+                !isPreloaded
+                  ? "bg-brand-lime/10 border-brand-lime shadow-glow-lime/20"
+                  : "bg-surface-1 border-surface-3 hover:border-surface-4"
+              }`}
+            >
+              <div className="flex items-center space-x-3 mb-2">
+                <div className="p-2 rounded-lg bg-brand-lime/20 text-brand-lime">
+                  <Package className="h-6 w-6" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-brand-white text-body">{"Fetch & Deliver"}</h4>
+                  <span className="text-micro text-brand-gray/60">{"Standard Workflow"}</span>
+                </div>
+              </div>
+              <p className="text-caption text-brand-gray/70 mt-2">
+                {"Robot travels from station to Origin Block first to fetch the parcel, then delivers it to Destination."}
+              </p>
+            </div>
+
+            {/* Mode 2: Parcel Preloaded */}
+            <div
+              onClick={() => setValue("is_preloaded", true)}
+              className={`cursor-pointer rounded-xl p-5 border-2 transition-all flex flex-col justify-between ${
+                isPreloaded
+                  ? "bg-brand-lime/10 border-brand-lime shadow-glow-lime/20"
+                  : "bg-surface-1 border-surface-3 hover:border-surface-4"
+              }`}
+            >
+              <div className="flex items-center space-x-3 mb-2">
+                <div className="p-2 rounded-lg bg-brand-cyan/20 text-brand-cyan">
+                  <Bot className="h-6 w-6" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-brand-white text-body">{"Parcel Already Loaded"}</h4>
+                  <span className="text-micro text-brand-cyan font-semibold">{"Fast Direct Dispatch"}</span>
+                </div>
+              </div>
+              <p className="text-caption text-brand-gray/70 mt-2">
+                {"Parcel is already inside the robot compartment. Robot travels directly to Destination Block."}
+              </p>
+            </div>
+          </div>
+        </div>
         {/* Route Details */}
         <div className="glassmorphism rounded-2xl p-6 border border-surface-4 space-y-6">
           <h3 className="text-title font-bold flex items-center space-x-2">

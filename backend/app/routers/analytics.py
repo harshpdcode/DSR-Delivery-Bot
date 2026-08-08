@@ -1,5 +1,5 @@
 """
-DSR Delivery Bot â€” Analytics Router
+DSR Go Ã¢â‚¬â€ Analytics Router
 Dashboard statistics, delivery trends, robot efficiency, and heatmap data.
 """
 

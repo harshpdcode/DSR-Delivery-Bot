@@ -1,5 +1,5 @@
 """
-DSR Delivery Bot â€” Auth Router
+DSR Go Ã¢â‚¬â€ Auth Router
 Registration, login, token refresh, and profile endpoints.
 """
 

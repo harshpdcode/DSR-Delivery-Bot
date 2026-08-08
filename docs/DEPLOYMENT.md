@@ -1,12 +1,12 @@
-# DSR Delivery Bot â€” Production Deployment Guide
+# DSR Go Ã¢â‚¬â€ Production Deployment Guide
 
-This document provides complete instructions for deploying the **DSR Delivery Bot (Smart Autonomous Campus Delivery Robot Platform)** to a production environment. 
+This document provides complete instructions for deploying the **DSR Go (Smart Autonomous Campus Delivery Robot Platform)** to a production environment. 
 
 The deployment model leverages a **multi-container Docker Compose** architecture fronted by an **Nginx** reverse proxy, handling SSL termination, Static asset caching, API routing, and secure WebSocket upgrading.
 
 ---
 
-## ðŸ—ï¸ Production Architecture Overview
+## Ã°Å¸Ââ€”Ã¯Â¸Â Production Architecture Overview
 
 In a production environment, the services run in optimized Docker containers:
 
@@ -26,7 +26,7 @@ graph TD
 
 ---
 
-## ðŸ”’ Production Security Checklist
+## Ã°Å¸â€â€™ Production Security Checklist
 
 Before deploying, ensure you configure the following settings:
 
@@ -36,20 +36,20 @@ Before deploying, ensure you configure the following settings:
     python -c "import secrets; print(secrets.token_hex(32))"
     ```
 2.  **Turn off FastAPI debug docs** in extremely high-security environments, or gate `/docs` and `/redoc` with basic authentication.
-3.  **Use Strong Database and Redis passwords** (avoid `dsr_delivery_bot_dev_pass` or blank credentials).
+3.  **Use Strong Database and Redis passwords** (avoid `dsr_go_dev_pass` or blank credentials).
 4.  **Set up Let's Encrypt / SSL Certificates** for secure `https://` and `wss://` traffic.
 5.  **Secure Mosquitto MQTT Broker**: Enable username/password authentication or token authentication for robots. Do not expose `1883` to the open web without firewall restrictions to campus-only IPs.
 
 ---
 
-## ðŸš€ Deployment Steps
+## Ã°Å¸Å¡â‚¬ Deployment Steps
 
 ### Step 1: Clone & Configure Environments
 
 1. Clone the repository on the production host:
    ```bash
-   git clone <repository_url> /opt/dsr_delivery_bot
-   cd /opt/dsr_delivery_bot
+   git clone <repository_url> /opt/dsr_go
+   cd /opt/dsr_go
    ```
 
 2. Create a production environment file `docker-compose.prod.yml` and a production `.env` file:
@@ -59,15 +59,15 @@ Before deploying, ensure you configure the following settings:
 
 3. Modify `.env` with production-ready values:
    ```env
-   APP_NAME=DSR Delivery Bot
+   APP_NAME=DSR Go
    APP_VERSION=1.0.0
    APP_ENV=production
    SECRET_KEY=9a2f7c00e12d4d98a0fcb5b8ee911762c9384bb882798e4cdb5ab9a3efc21bc4  # Generate a unique key!
    
    POSTGRES_HOST=postgres
    POSTGRES_PORT=5432
-   POSTGRES_DB=dsr_delivery_bot
-   POSTGRES_USER=dsr_delivery_bot_prod_user
+   POSTGRES_DB=dsr_go
+   POSTGRES_USER=dsr_go_prod_user
    POSTGRES_PASSWORD=your_super_secure_postgres_password_here
    
    REDIS_HOST=redis
@@ -79,10 +79,10 @@ Before deploying, ensure you configure the following settings:
    ACCESS_TOKEN_EXPIRE_MINUTES=30
    REFRESH_TOKEN_EXPIRE_DAYS=7
    
-   CORS_ORIGINS=https://dsr_delivery_bot.silveroakuni.ac.in,https://www.dsr_delivery_bot.silveroakuni.ac.in
+   CORS_ORIGINS=https://dsr_go.silveroakuni.ac.in,https://www.dsr_go.silveroakuni.ac.in
    
-   NEXT_PUBLIC_API_URL=https://dsr_delivery_bot.silveroakuni.ac.in
-   NEXT_PUBLIC_WS_URL=wss://dsr_delivery_bot.silveroakuni.ac.in
+   NEXT_PUBLIC_API_URL=https://dsr_go.silveroakuni.ac.in
+   NEXT_PUBLIC_WS_URL=wss://dsr_go.silveroakuni.ac.in
    ```
 
 ---
@@ -104,17 +104,17 @@ http {
     # Redirect HTTP to HTTPS
     server {
         listen 80;
-        server_name dsr_delivery_bot.silveroakuni.ac.in;
+        server_name dsr_go.silveroakuni.ac.in;
         return 301 https://$host$request_uri;
     }
 
     # HTTPS Server
     server {
         listen 443 ssl;
-        server_name dsr_delivery_bot.silveroakuni.ac.in;
+        server_name dsr_go.silveroakuni.ac.in;
 
-        ssl_certificate /etc/letsencrypt/live/dsr_delivery_bot.silveroakuni.ac.in/fullchain.pem;
-        ssl_certificate_key /etc/letsencrypt/live/dsr_delivery_bot.silveroakuni.ac.in/privkey.pem;
+        ssl_certificate /etc/letsencrypt/live/dsr_go.silveroakuni.ac.in/fullchain.pem;
+        ssl_certificate_key /etc/letsencrypt/live/dsr_go.silveroakuni.ac.in/privkey.pem;
         ssl_protocols TLSv1.2 TLSv1.3;
         ssl_ciphers HIGH:!aNULL:!MD5;
 
@@ -190,12 +190,12 @@ docker-compose -f docker-compose.prod.yml exec backend alembic upgrade head
 
 ---
 
-## ðŸ“ˆ Monitoring & Maintenance
+## Ã°Å¸â€œË† Monitoring & Maintenance
 
 ### 1. Database Backups
 Ensure standard PostgreSQL backup routines are executed daily. You can dump the production database using:
 ```bash
-docker-compose -f docker-compose.prod.yml exec postgres pg_dump -U dsr_delivery_bot_prod_user dsr_delivery_bot > backup.sql
+docker-compose -f docker-compose.prod.yml exec postgres pg_dump -U dsr_go_prod_user dsr_go > backup.sql
 ```
 
 ### 2. MQTT Broker Log Auditing

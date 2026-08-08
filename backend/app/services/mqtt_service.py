@@ -1,5 +1,5 @@
 """
-DSR Delivery Bot â€” MQTT Service
+DSR Go Ã¢â‚¬â€ MQTT Service
 Handles robot telemetry ingestion from the MQTT broker.
 """
 
@@ -20,7 +20,7 @@ class MQTTService:
 
     def __init__(self):
         self.client = mqtt.Client(
-            client_id="dsr_delivery_bot-backend",
+            client_id="dsr_go-backend",
             callback_api_version=mqtt.CallbackAPIVersion.VERSION2,
         )
         self._on_telemetry: Optional[Callable] = None
@@ -51,23 +51,23 @@ class MQTTService:
             )
             self.client.loop_start()
             logger.info(
-                f"ðŸ“¡ MQTT connecting to {settings.MQTT_BROKER_HOST}:{settings.MQTT_BROKER_PORT}"
+                f"Ã°Å¸â€œÂ¡ MQTT connecting to {settings.MQTT_BROKER_HOST}:{settings.MQTT_BROKER_PORT}"
             )
         except Exception as e:
-            logger.warning(f"âš ï¸ MQTT connection failed: {e}")
+            logger.warning(f"Ã¢Å¡Â Ã¯Â¸Â MQTT connection failed: {e}")
 
     def _on_connect(self, client, userdata, flags, rc, properties=None):
         if rc == 0:
             self._connected = True
-            logger.info("âœ… MQTT connected")
+            logger.info("Ã¢Å“â€¦ MQTT connected")
             client.subscribe(settings.MQTT_TOPIC_TELEMETRY)
             client.subscribe(settings.MQTT_TOPIC_STATUS)
         else:
-            logger.error(f"âŒ MQTT connection failed with code: {rc}")
+            logger.error(f"Ã¢ÂÅ’ MQTT connection failed with code: {rc}")
 
     def _on_disconnect(self, client, userdata, flags, rc, properties=None):
         self._connected = False
-        logger.warning(f"âš ï¸ MQTT disconnected (rc={rc})")
+        logger.warning(f"Ã¢Å¡Â Ã¯Â¸Â MQTT disconnected (rc={rc})")
 
     def _on_message(self, client, userdata, msg):
         try:
@@ -86,16 +86,16 @@ class MQTTService:
 
     def publish_command(self, robot_id: int, command: dict):
         """Send a command to a specific robot."""
-        topic = f"dsr_delivery_bot/robots/{robot_id}/command"
+        topic = f"dsr_go/robots/{robot_id}/command"
         payload = json.dumps(command)
         self.client.publish(topic, payload, qos=1)
-        logger.info(f"ðŸ“¤ Command sent to robot {robot_id}: {command.get('action')}")
+        logger.info(f"Ã°Å¸â€œÂ¤ Command sent to robot {robot_id}: {command.get('action')}")
 
     def stop(self):
         """Stop the MQTT client."""
         self.client.loop_stop()
         self.client.disconnect()
-        logger.info("ðŸ›‘ MQTT client stopped")
+        logger.info("Ã°Å¸â€ºâ€˜ MQTT client stopped")
 
 
 # Singleton

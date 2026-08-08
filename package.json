@@ -1,0 +1,14 @@
+{
+  "name": "dsr-delivery-bot-root",
+  "version": "1.0.0",
+  "private": true,
+  "description": "DSR Go Campus Delivery Robot System Root Launcher",
+  "scripts": {
+    "dev:frontend": "npm run dev --prefix frontend",
+    "dev:backend": "backend\\.venv\\Scripts\\python.exe -m uvicorn app.main:app --reload --app-dir backend --port 8000",
+    "dev": "npx concurrently -k -n \"FRONTEND,BACKEND\" -c \"cyan,magenta\" \"npm run dev:frontend\" \"npm run dev:backend\""
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

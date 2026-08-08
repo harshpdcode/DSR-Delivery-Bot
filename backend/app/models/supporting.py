@@ -1,5 +1,5 @@
 """
-DSR Delivery Bot â€” Telemetry, RobotHealth, OTPLog, Notification, DeliveryHistory, AuditLog Models
+DSR Go Ã¢â‚¬â€ Telemetry, RobotHealth, OTPLog, Notification, DeliveryHistory, AuditLog Models
 Supporting models for the delivery platform.
 """
 
@@ -91,7 +91,7 @@ class OTPLog(Base):
 
 
 class Notification(Base):
-    """User notifications â€” push, SMS, or in-app."""
+    """User notifications Ã¢â‚¬â€ push, SMS, or in-app."""
 
     __tablename__ = "notifications"
 
@@ -101,7 +101,7 @@ class Notification(Base):
     body = Column(Text, nullable=False)
     type = Column(String(50), default="info", nullable=False)
     read = Column(Boolean, default=False, nullable=False)
-    metadata = Column(JSON, nullable=True)
+    meta_data = Column("metadata", JSON, nullable=True)
     created_at = Column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),
@@ -112,7 +112,7 @@ class Notification(Base):
 
 
 class DeliveryHistory(Base):
-    """Delivery status change log â€” full audit trail."""
+    """Delivery status change log Ã¢â‚¬â€ full audit trail."""
 
     __tablename__ = "delivery_history"
 
@@ -142,7 +142,7 @@ class AuditLog(Base):
     action = Column(String(100), nullable=False)
     resource = Column(String(100), nullable=False)
     resource_id = Column(Integer, nullable=True)
-    metadata = Column(JSON, nullable=True)
+    meta_data = Column("metadata", JSON, nullable=True)
     ip_address = Column(String(45), nullable=True)
     user_agent = Column(Text, nullable=True)
     created_at = Column(

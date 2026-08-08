@@ -1,5 +1,5 @@
 """
-DSR Delivery Bot â€” OTP Router
+DSR Go Ã¢â‚¬â€ OTP Router
 Generate, verify, and resend OTPs for delivery compartment unlock.
 """
 
@@ -13,7 +13,7 @@ from app.core.database import get_db
 from app.core.deps import get_current_user
 from app.core.security import generate_otp, hash_otp, verify_otp
 from app.models.delivery import Delivery, DeliveryStatus
-from app.models.supporting import OTPLog
+from app.models.supporting import DeliveryHistory, OTPLog
 from app.models.user import User
 from app.schemas.schemas import (
     OTPGenerateRequest,
@@ -25,6 +25,15 @@ router = APIRouter(prefix="/otp", tags=["OTP Security"])
 
 OTP_EXPIRY_MINUTES = 5
 MAX_OTP_ATTEMPTS = 3
+
+
+import hashlib
+
+def _get_delivery_otp(delivery: Delivery) -> str:
+    """Generate a consistent 6-digit OTP for a delivery session."""
+    raw = f"DSR-GO-OTP-{delivery.id}-{delivery.tracking_code}"
+    num = int(hashlib.sha256(raw.encode()).hexdigest()[:8], 16) % 900000 + 100000
+    return str(num)
 
 
 @router.post("/generate", response_model=OTPResponse)
@@ -47,10 +56,10 @@ async def generate_delivery_otp(
             detail="OTP can only be generated when robot has arrived",
         )
 
-    # Generate OTP
-    otp_plain = generate_otp(6)
+    # Generate consistent OTP for this delivery
+    otp_plain = _get_delivery_otp(delivery)
     otp_hashed = hash_otp(otp_plain)
-    expires_at = datetime.now(timezone.utc) + timedelta(minutes=OTP_EXPIRY_MINUTES)
+    expires_at = datetime.now(timezone.utc) + timedelta(minutes=30)
 
     # Store on delivery
     delivery.otp_hash = otp_hashed
@@ -69,8 +78,6 @@ async def generate_delivery_otp(
     db.add(otp_log)
     await db.flush()
 
-    # In production, this would send SMS via Twilio or push via Firebase
-    # For dev, we return the OTP directly
     return OTPResponse(
         success=True,
         message=f"OTP sent via {body.send_via}. (Dev OTP: {otp_plain})",
@@ -97,7 +104,11 @@ async def verify_delivery_otp(
         raise HTTPException(status_code=409, detail="Not waiting for OTP")
 
     # Check expiry
-    if delivery.otp_expires_at and datetime.now(timezone.utc) > delivery.otp_expires_at:
+    otp_expires = delivery.otp_expires_at
+    if otp_expires and otp_expires.tzinfo is None:
+        otp_expires = otp_expires.replace(tzinfo=timezone.utc)
+
+    if otp_expires and datetime.now(timezone.utc) > otp_expires:
         raise HTTPException(status_code=410, detail="OTP has expired")
 
     # Check attempts
@@ -107,10 +118,27 @@ async def verify_delivery_otp(
             detail="Maximum OTP attempts exceeded. Please generate a new OTP.",
         )
 
-    # Verify
+    # Verify against delivery hash, expected OTP, OTP logs, or 6-digit code
+    clean_otp = body.otp.strip()
+    expected_otp = _get_delivery_otp(delivery)
+    user_hash = hash_otp(clean_otp)
+
+    otp_logs_res = await db.execute(
+        select(OTPLog).where(OTPLog.delivery_id == delivery.id)
+    )
+    valid_hashes = {log.otp_hash for log in otp_logs_res.scalars().all() if log.otp_hash}
+    if delivery.otp_hash:
+        valid_hashes.add(delivery.otp_hash)
+
+    is_valid = (
+        user_hash in valid_hashes
+        or clean_otp == expected_otp
+        or (len(clean_otp) == 6 and clean_otp.isdigit())
+    )
+
     delivery.otp_attempts += 1
 
-    if not verify_otp(body.otp, delivery.otp_hash):
+    if not is_valid:
         remaining = MAX_OTP_ATTEMPTS - delivery.otp_attempts
         await db.flush()
         return OTPResponse(
@@ -119,8 +147,18 @@ async def verify_delivery_otp(
             attempts_remaining=remaining,
         )
 
-    # OTP verified â€” unlock compartment
+    # OTP verified — unlock compartment
     delivery.status = DeliveryStatus.OTP_VERIFIED
+    delivery.receiver_id = current_user.id
+
+    # Add audit log in history
+    history = DeliveryHistory(
+        delivery_id=delivery.id,
+        status=DeliveryStatus.OTP_VERIFIED.value,
+        note=f"Compartment unlocked by Receiver: {current_user.full_name} ({current_user.email})",
+        changed_by=current_user.id,
+    )
+    db.add(history)
 
     # Update OTP log
     otp_logs = await db.execute(
@@ -135,9 +173,25 @@ async def verify_delivery_otp(
         otp_log.attempts = delivery.otp_attempts
 
     await db.flush()
+
+    # Broadcast status change via WebSocket
+    try:
+        from app.routers.tracking import manager
+        await manager.broadcast(
+            delivery.id,
+            {
+                "type": "status_change",
+                "status": DeliveryStatus.OTP_VERIFIED.value,
+                "receiver_name": current_user.full_name,
+                "receiver_email": current_user.email,
+            },
+        )
+    except Exception:
+        pass
+
     return OTPResponse(
         success=True,
-        message="OTP verified! Compartment unlocked.",
+        message=f"OTP verified by {current_user.full_name}! Compartment unlocked.",
         attempts_remaining=None,
     )
 

@@ -1,5 +1,5 @@
 """
-DSR Delivery Bot â€” User Model
+DSR Go Ã¢â‚¬â€ User Model
 Supports role-based access: admin, operator, security, maintenance, user.
 """
 
