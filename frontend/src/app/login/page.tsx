@@ -11,8 +11,8 @@ import { Bot, Mail, Lock, AlertCircle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 const loginSchema = z.object({
-  email: z.string().email("Invalid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  email: z.string().min(1, "Username or email is required"),
+  password: z.string().min(4, "Password must be at least 4 characters"),
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
@@ -25,6 +25,7 @@ export default function LoginPage() {
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -53,6 +54,21 @@ export default function LoginPage() {
     }
   };
 
+  const handleQuickLogin = async (email: string, pass: string) => {
+    setValue("email", email);
+    setValue("password", pass);
+    setIsSubmitting(true);
+    const success = await login(email, pass);
+    setIsSubmitting(false);
+
+    if (success) {
+      toast.success(`Logged in as ${email}`);
+      router.push("/dashboard");
+    } else {
+      toast.error("Demo login failed.");
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-surface-0 bg-grid p-6 relative overflow-hidden">
       <div className="absolute inset-0 bg-radial-gradient from-brand-lime/5 to-transparent blur-3xl rounded-full" />
@@ -78,17 +94,17 @@ export default function LoginPage() {
         )}
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          {/* Email */}
+          {/* Email / Username */}
           <div className="space-y-2">
             <label className="text-caption font-semibold text-brand-gray/70 block">
-              Email Address
+              Email Address or Username
             </label>
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-brand-gray/30" />
               <input
                 {...register("email")}
-                type="email"
-                placeholder="you@silveroak.edu.in"
+                type="text"
+                placeholder="admin or user@silveroak.edu.in"
                 className="w-full bg-surface-1 border border-surface-4 focus:border-brand-lime focus:outline-none rounded-lg py-2.5 pl-10 pr-4 text-body text-brand-white transition-colors"
               />
             </div>
@@ -127,7 +143,46 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <p className="text-caption text-center text-brand-gray/40 mt-8">
+        {/* 1-Click Quick Demo Login Accounts */}
+        <div className="mt-6 pt-6 border-t border-surface-4/60 space-y-2">
+          <p className="text-micro font-bold uppercase tracking-wider text-brand-gray/40 text-center mb-3">Quick Demo Login</p>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => handleQuickLogin("admin@example.com", "admin123")}
+              className="px-3 py-2 rounded-lg bg-surface-2 hover:bg-surface-3 border border-surface-4 text-micro font-bold text-brand-white flex items-center justify-between transition-all"
+            >
+              <span>🔑 Admin</span>
+              <span className="text-brand-lime">admin123</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleQuickLogin("operator@example.com", "operator123")}
+              className="px-3 py-2 rounded-lg bg-surface-2 hover:bg-surface-3 border border-surface-4 text-micro font-bold text-brand-white flex items-center justify-between transition-all"
+            >
+              <span>🤖 Operator</span>
+              <span className="text-brand-lime">operator123</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleQuickLogin("professor@example.com", "prof123")}
+              className="px-3 py-2 rounded-lg bg-surface-2 hover:bg-surface-3 border border-surface-4 text-micro font-bold text-brand-white flex items-center justify-between transition-all"
+            >
+              <span>🎓 Professor</span>
+              <span className="text-brand-lime">prof123</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleQuickLogin("student@example.com", "student123")}
+              className="px-3 py-2 rounded-lg bg-surface-2 hover:bg-surface-3 border border-surface-4 text-micro font-bold text-brand-white flex items-center justify-between transition-all"
+            >
+              <span>🎒 Student</span>
+              <span className="text-brand-lime">student123</span>
+            </button>
+          </div>
+        </div>
+
+        <p className="text-caption text-center text-brand-gray/40 mt-6">
           Don&apos;t have an account?{" "}
           <Link href="/register" className="text-brand-lime font-semibold hover:underline">
             Register now

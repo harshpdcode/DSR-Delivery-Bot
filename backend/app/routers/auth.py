@@ -85,6 +85,12 @@ async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)):
         "admin@example.com": ("admin123", UserRole.ADMIN, "System Admin"),
         "user": ("user123", UserRole.USER, "Campus User"),
         "user@example.com": ("user123", UserRole.USER, "Campus User"),
+        "operator": ("operator123", UserRole.OPERATOR, "Sarah Jenkins (Fleet Control)"),
+        "operator@example.com": ("operator123", UserRole.OPERATOR, "Sarah Jenkins (Fleet Control)"),
+        "professor": ("prof123", UserRole.USER, "Dr. Aris Thorne (Faculty)"),
+        "professor@example.com": ("prof123", UserRole.USER, "Dr. Aris Thorne (Faculty)"),
+        "student": ("student123", UserRole.USER, "Alex Rivera (Student)"),
+        "student@example.com": ("student123", UserRole.USER, "Alex Rivera (Student)"),
     }
 
     result = await db.execute(select(User).where(User.email == email_clean))
