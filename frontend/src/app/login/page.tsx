@@ -143,46 +143,7 @@ export default function LoginPage() {
           </button>
         </form>
 
-        {/* 1-Click Quick Demo Login Accounts */}
-        <div className="mt-6 pt-6 border-t border-surface-4/60 space-y-2">
-          <p className="text-micro font-bold uppercase tracking-wider text-brand-gray/40 text-center mb-3">Quick Demo Login</p>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => handleQuickLogin("admin@example.com", "admin123")}
-              className="px-3 py-2 rounded-lg bg-surface-2 hover:bg-surface-3 border border-surface-4 text-micro font-bold text-brand-white flex items-center justify-between transition-all"
-            >
-              <span>🔑 Admin</span>
-              <span className="text-brand-lime">admin123</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => handleQuickLogin("operator@example.com", "operator123")}
-              className="px-3 py-2 rounded-lg bg-surface-2 hover:bg-surface-3 border border-surface-4 text-micro font-bold text-brand-white flex items-center justify-between transition-all"
-            >
-              <span>🤖 Operator</span>
-              <span className="text-brand-lime">operator123</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => handleQuickLogin("professor@example.com", "prof123")}
-              className="px-3 py-2 rounded-lg bg-surface-2 hover:bg-surface-3 border border-surface-4 text-micro font-bold text-brand-white flex items-center justify-between transition-all"
-            >
-              <span>🎓 Professor</span>
-              <span className="text-brand-lime">prof123</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => handleQuickLogin("student@example.com", "student123")}
-              className="px-3 py-2 rounded-lg bg-surface-2 hover:bg-surface-3 border border-surface-4 text-micro font-bold text-brand-white flex items-center justify-between transition-all"
-            >
-              <span>🎒 Student</span>
-              <span className="text-brand-lime">student123</span>
-            </button>
-          </div>
-        </div>
-
-        <p className="text-caption text-center text-brand-gray/40 mt-6">
+        <p className="text-caption text-center text-brand-gray/40 mt-8">
           Don&apos;t have an account?{" "}
           <Link href="/register" className="text-brand-lime font-semibold hover:underline">
             Register now

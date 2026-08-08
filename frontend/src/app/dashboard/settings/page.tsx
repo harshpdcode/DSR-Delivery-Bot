@@ -53,6 +53,50 @@ export default function SettingsPage() {
     }
   }, []);
 
+  // Profile edit state
+  const [fullName, setFullName] = useState(user?.full_name || "");
+  const [email, setEmail] = useState(user?.email || "");
+  const [phone, setPhone] = useState(user?.phone || "");
+  const [updatingProfile, setUpdatingProfile] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      setFullName(user.full_name || "");
+      setEmail(user.email || "");
+      setPhone(user.phone || "");
+    }
+  }, [user]);
+
+  const handleUpdateProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setUpdatingProfile(true);
+    try {
+      const res = await fetch("/api/v1/auth/me", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          full_name: fullName,
+          email: email,
+          phone: phone,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.detail || "Failed to update profile");
+      }
+      const updatedUser = await res.json();
+      useAuthStore.setState({ user: updatedUser });
+      toast.success("Profile updated successfully!");
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setUpdatingProfile(false);
+    }
+  };
+
   const handleToggle = (key: string, currentValue: boolean, setter: (v: boolean) => void) => {
     const newValue = !currentValue;
     setter(newValue);
@@ -64,8 +108,8 @@ export default function SettingsPage() {
     if (!token) return;
     navigator.clipboard.writeText(token);
     setCopied(true);
-    toast.success("API Token copied to clipboard!");
-    setTimeout(() => setCopied(false), 2000);
+    toast.success("Access Token copied to clipboard!");
+    setTimeout(() => setCopied(false), 3000);
   };
 
   const handleResetAppCache = () => {
@@ -74,17 +118,17 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
+    <div className="space-y-6 max-w-4xl">
       {/* Header */}
       <div>
-        <h1 className="text-display font-extrabold tracking-tight">System Settings</h1>
-        <p className="text-body text-brand-gray/50">
-          Configure security credentials, notification channels, and developer integrations.
+        <h1 className="text-heading font-extrabold tracking-tight">System Settings</h1>
+        <p className="text-caption text-brand-gray/50 mt-1">
+          Configure personal identification, notification channels, theme, and integrations.
         </p>
       </div>
 
-      {/* Tabs Layout */}
-      <div className="flex space-x-1.5 p-1 bg-surface-2 rounded-xl border border-surface-4 max-w-md">
+      {/* Tabs */}
+      <div className="flex bg-surface-1 p-1 rounded-xl border border-surface-3 max-w-md">
         <button
           onClick={() => setActiveTab("profile")}
           className={`flex-1 py-2 px-3 rounded-lg text-caption font-bold transition-all flex items-center justify-center space-x-2 ${
@@ -125,45 +169,78 @@ export default function SettingsPage() {
       {/* Profile Details Tab */}
       {activeTab === "profile" && (
         <div className="space-y-6">
-          <div className="glassmorphism rounded-3xl border border-surface-4 p-6 space-y-6">
-            <h3 className="text-title font-bold flex items-center space-x-2">
-              <UserIcon className="h-5 w-5 text-brand-lime" />
-              <span>Personal Identification</span>
-            </h3>
+          <form onSubmit={handleUpdateProfile} className="glassmorphism rounded-3xl border border-surface-4 p-6 space-y-6">
+            <div className="flex items-center justify-between">
+              <h3 className="text-title font-bold flex items-center space-x-2">
+                <UserIcon className="h-5 w-5 text-brand-lime" />
+                <span>Personal Identification</span>
+              </h3>
+              <span className="text-micro font-bold px-2.5 py-0.5 rounded bg-brand-lime/10 border border-brand-lime/20 text-brand-lime uppercase">
+                Editable
+              </span>
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-caption">
-              <div className="space-y-1">
-                <span className="text-brand-gray/40 block font-bold">Full Name</span>
-                <div className="py-2.5 px-4 bg-surface-1 border border-surface-3 rounded-lg font-semibold text-brand-white">
-                  {user?.full_name}
-                </div>
+              <div className="space-y-1.5">
+                <label className="text-brand-gray/60 block font-bold">Full Name</label>
+                <input
+                  type="text"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder="Enter your full name"
+                  className="w-full py-2.5 px-4 bg-surface-1 border border-surface-3 focus:border-brand-lime focus:outline-none rounded-lg font-semibold text-brand-white transition-all"
+                  required
+                />
               </div>
               
-              <div className="space-y-1">
-                <span className="text-brand-gray/40 block font-bold">Role Assignment</span>
-                <div className="py-2.5 px-4 bg-surface-1 border border-surface-3 rounded-lg font-semibold text-brand-lime capitalize flex items-center space-x-2">
+              <div className="space-y-1.5">
+                <label className="text-brand-gray/60 block font-bold">Role Assignment</label>
+                <div className="py-2.5 px-4 bg-surface-2/40 border border-surface-3 rounded-lg font-semibold text-brand-lime capitalize flex items-center space-x-2 cursor-not-allowed opacity-80">
                   <Shield className="h-4 w-4" />
                   <span>{user?.role}</span>
                 </div>
               </div>
 
-              <div className="space-y-1">
-                <span className="text-brand-gray/40 block font-bold">Email Address</span>
-                <div className="py-2.5 px-4 bg-surface-1 border border-surface-3 rounded-lg font-semibold text-brand-white flex items-center space-x-2">
-                  <Mail className="h-4 w-4 text-brand-gray/30" />
-                  <span>{user?.email}</span>
+              <div className="space-y-1.5">
+                <label className="text-brand-gray/60 block font-bold">Email Address</label>
+                <div className="relative">
+                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-brand-gray/30" />
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@silveroak.edu.in"
+                    className="w-full py-2.5 pl-10 pr-4 bg-surface-1 border border-surface-3 focus:border-brand-lime focus:outline-none rounded-lg font-semibold text-brand-white transition-all"
+                    required
+                  />
                 </div>
               </div>
 
-              <div className="space-y-1">
-                <span className="text-brand-gray/40 block font-bold">Phone Number</span>
-                <div className="py-2.5 px-4 bg-surface-1 border border-surface-3 rounded-lg font-semibold text-brand-white flex items-center space-x-2">
-                  <Phone className="h-4 w-4 text-brand-gray/30" />
-                  <span>{user?.phone || "No phone linked"}</span>
+              <div className="space-y-1.5">
+                <label className="text-brand-gray/60 block font-bold">Phone Number</label>
+                <div className="relative">
+                  <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-brand-gray/30" />
+                  <input
+                    type="text"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="+91 98765 43210"
+                    className="w-full py-2.5 pl-10 pr-4 bg-surface-1 border border-surface-3 focus:border-brand-lime focus:outline-none rounded-lg font-semibold text-brand-white transition-all"
+                  />
                 </div>
               </div>
             </div>
-          </div>
+
+            <div className="pt-2 flex justify-end">
+              <button
+                type="submit"
+                disabled={updatingProfile}
+                className="px-6 py-2.5 rounded-xl bg-brand-lime text-brand-black font-extrabold hover:shadow-glow-lime hover:scale-[1.02] transition-all disabled:opacity-50 text-caption cursor-pointer"
+              >
+                {updatingProfile ? "Saving Changes..." : "Save Profile Changes"}
+              </button>
+            </div>
+          </form>
 
           <div className="glassmorphism rounded-3xl border border-surface-4 p-6 space-y-6">
             <h3 className="text-title font-bold flex items-center space-x-2">

@@ -23,6 +23,7 @@ from app.models.user import User, UserRole
 from app.schemas.schemas import (
     LoginRequest,
     MessageResponse,
+    ProfileUpdateRequest,
     RefreshRequest,
     RegisterRequest,
     TokenResponse,
@@ -184,6 +185,48 @@ async def refresh_token(body: RefreshRequest, db: AsyncSession = Depends(get_db)
 @router.get("/me", response_model=UserResponse)
 async def get_me(current_user: User = Depends(get_current_user)):
     """Get current authenticated user profile."""
+    return current_user
+
+
+@router.put("/me", response_model=UserResponse)
+async def update_me(
+    body: ProfileUpdateRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Update current user profile info (full_name, email, phone)."""
+    if body.full_name is not None and body.full_name.strip():
+        current_user.full_name = body.full_name.strip()
+
+    if body.email is not None and body.email.strip():
+        email_clean = body.email.strip().lower()
+        if email_clean != current_user.email:
+            existing = await db.execute(
+                select(User).where(User.email == email_clean, User.id != current_user.id)
+            )
+            if existing.scalar_one_or_none():
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="Email is already registered to another user",
+                )
+            current_user.email = email_clean
+
+    if body.phone is not None:
+        phone_clean = body.phone.strip()
+        if phone_clean and phone_clean != current_user.phone:
+            existing_phone = await db.execute(
+                select(User).where(User.phone == phone_clean, User.id != current_user.id)
+            )
+            if existing_phone.scalar_one_or_none():
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="Phone number is already registered to another user",
+                )
+            current_user.phone = phone_clean
+
+    db.add(current_user)
+    await db.commit()
+    await db.refresh(current_user)
     return current_user
 
 
