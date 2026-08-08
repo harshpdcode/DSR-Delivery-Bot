@@ -289,6 +289,7 @@ export default function OtpUnlockPage() {
               type="button"
               onClick={handleDeletePin}
               className="h-14 rounded-2xl bg-surface-1 border border-surface-3 hover:bg-surface-2 active:scale-95 flex items-center justify-center text-brand-gray hover:text-brand-white transition-all"
+              aria-label="Delete digit"
             >
               <Delete className="h-6 w-6" />
             </button>

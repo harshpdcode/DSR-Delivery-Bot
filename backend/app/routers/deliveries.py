@@ -3,6 +3,7 @@ DSR Go Ã¢â‚¬â€ Deliveries Router
 Create deliveries, start missions, track status, view history.
 """
 
+import json
 import secrets
 import string
 from datetime import datetime, timezone
@@ -26,6 +27,43 @@ from app.schemas.schemas import (
 )
 
 router = APIRouter(prefix="/deliveries", tags=["Deliveries"])
+
+
+import math
+from datetime import timedelta
+
+AVG_ROBOT_SPEED_MPS = 1.2  # m/s average speed
+
+BLOCK_COORDS = {
+    "A Block": (23.0906, 72.5344),
+    "B Block": (23.0912, 72.5351),
+    "C Block": (23.0918, 72.5346),
+    "D Block": (23.0915, 72.5335),
+    "E Block": (23.0901, 72.5338),
+    "Canteen": (23.0898, 72.5348),
+}
+
+def _calculate_eta_datetime(robot: Optional[Robot], dest_block: str) -> datetime:
+    lat1, lng1 = (23.0906, 72.5344)
+    if robot and robot.location_lat and robot.location_lng:
+        lat1, lng1 = robot.location_lat, robot.location_lng
+
+    dest_val = dest_block.value if hasattr(dest_block, 'value') else str(dest_block)
+    lat2, lng2 = BLOCK_COORDS.get(dest_val, (23.0912, 72.5351))
+
+    R = 6371000  # meters
+    phi1, phi2 = math.radians(lat1), math.radians(lat2)
+    dphi = math.radians(lat2 - lat1)
+    dlambda = math.radians(lng2 - lng1)
+
+    a = math.sin(dphi / 2)**2 + math.cos(phi1) * math.cos(phi2) * math.sin(dlambda / 2)**2
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    distance_meters = R * c
+
+    seconds = int(distance_meters / AVG_ROBOT_SPEED_MPS)
+    seconds = max(120, seconds)
+
+    return datetime.now(timezone.utc) + timedelta(seconds=seconds)
 
 
 def _generate_tracking_code() -> str:
@@ -71,6 +109,7 @@ async def create_delivery(
         receiver_name=body.receiver_name,
         origin_block=origin,
         destination_block=destination,
+        extra_stops=json.dumps(body.extra_stops) if body.extra_stops else None,
         status=DeliveryStatus.PENDING,
         package_description=body.package_description,
         package_weight_kg=body.package_weight_kg,
@@ -90,13 +129,20 @@ async def create_delivery(
     db.add(history)
     await db.flush()
     await db.refresh(delivery)
-    return delivery
+    return _format_delivery(delivery)
 
 
 from sqlalchemy.orm import selectinload
 
 
 def _format_delivery(d: Delivery) -> dict:
+    extra_stops_list = None
+    if d.extra_stops:
+        try:
+            extra_stops_list = json.loads(d.extra_stops) if isinstance(d.extra_stops, str) else d.extra_stops
+        except Exception:
+            extra_stops_list = None
+
     return {
         "id": d.id,
         "tracking_code": d.tracking_code,
@@ -110,6 +156,7 @@ def _format_delivery(d: Delivery) -> dict:
         "receiver_email": d.receiver.email if d.receiver else None,
         "origin_block": d.origin_block.value if hasattr(d.origin_block, 'value') else str(d.origin_block),
         "destination_block": d.destination_block.value if hasattr(d.destination_block, 'value') else str(d.destination_block),
+        "extra_stops": extra_stops_list,
         "status": d.status.value if hasattr(d.status, 'value') else str(d.status),
         "package_description": d.package_description,
         "package_weight_kg": d.package_weight_kg,
@@ -208,6 +255,15 @@ async def start_delivery(
     if robot:
         robot.status = RobotStatus.EN_ROUTE
 
+    # Update delivery status based on preloaded parcel state
+    if delivery.is_preloaded:
+        delivery.status = DeliveryStatus.EN_ROUTE
+        delivery.estimated_arrival = _calculate_eta_datetime(robot, delivery.destination_block)
+        note_text = "Delivery started — preloaded parcel en route to destination"
+    else:
+        delivery.status = DeliveryStatus.PICKUP_IN_PROGRESS
+        note_text = "Delivery started — robot heading to pickup block"
+
     # Log history
     history = DeliveryHistory(
         delivery_id=delivery.id,
@@ -219,7 +275,7 @@ async def start_delivery(
 
     await db.flush()
     await db.refresh(delivery)
-    return delivery
+    return _format_delivery(delivery)
 
 
 @router.post("/{delivery_id}/fetched", response_model=DeliveryResponse)
@@ -249,7 +305,13 @@ async def confirm_parcel_fetched(
             detail="This is a pre-loaded delivery. Use the /start endpoint instead.",
         )
 
+    robot_result = await db.execute(
+        select(Robot).where(Robot.id == delivery.robot_id)
+    )
+    robot = robot_result.scalar_one_or_none()
+
     delivery.status = DeliveryStatus.EN_ROUTE
+    delivery.estimated_arrival = _calculate_eta_datetime(robot, delivery.destination_block)
 
     history = DeliveryHistory(
         delivery_id=delivery.id,
@@ -261,7 +323,7 @@ async def confirm_parcel_fetched(
 
     await db.flush()
     await db.refresh(delivery)
-    return delivery
+    return _format_delivery(delivery)
 
 
 @router.post("/{delivery_id}/arrive", response_model=DeliveryResponse)
@@ -311,6 +373,35 @@ async def complete_delivery(
     if not delivery:
         raise HTTPException(status_code=404, detail="Delivery not found")
 
+    stops = []
+    if delivery.extra_stops:
+        try:
+            stops = json.loads(delivery.extra_stops) if isinstance(delivery.extra_stops, str) else delivery.extra_stops
+        except Exception:
+            stops = []
+
+    if stops and len(stops) > 0:
+        next_stop = stops[0]
+        remaining_stops = stops[1:]
+        delivery.origin_block = delivery.destination_block
+        try:
+            delivery.destination_block = CampusBlock(next_stop)
+        except ValueError:
+            delivery.destination_block = next_stop
+        delivery.extra_stops = json.dumps(remaining_stops) if remaining_stops else None
+        delivery.status = DeliveryStatus.EN_ROUTE
+
+        history = DeliveryHistory(
+            delivery_id=delivery.id,
+            status=DeliveryStatus.EN_ROUTE.value,
+            note=f"Leg completed. Robot advancing to next stop: {next_stop}",
+            changed_by=current_user.id,
+        )
+        db.add(history)
+        await db.flush()
+        await db.refresh(delivery)
+        return _format_delivery(delivery)
+
     delivery.status = DeliveryStatus.COMPLETED
     delivery.completed_at = datetime.now(timezone.utc)
 
@@ -325,14 +416,14 @@ async def complete_delivery(
     history = DeliveryHistory(
         delivery_id=delivery.id,
         status=DeliveryStatus.COMPLETED.value,
-        note="Delivery completed Ã¢â‚¬â€ parcel collected",
+        note="Delivery completed — parcel collected",
         changed_by=current_user.id,
     )
     db.add(history)
 
     await db.flush()
     await db.refresh(delivery)
-    return delivery
+    return _format_delivery(delivery)
 
 
 @router.get("/{delivery_id}/history", response_model=List[DeliveryHistoryResponse])

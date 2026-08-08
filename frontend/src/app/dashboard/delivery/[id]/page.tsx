@@ -26,23 +26,27 @@ import {
   Phone,
   Mail,
   ShieldCheck,
-  Navigation
+  Navigation,
+  DoorOpen,
+  LockKeyhole
 } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
 
-// ── Campus Waypoints for Silver Oak University ──────────────────────────────
-const CAMPUS_BLOCKS: Record<string, { x: number; y: number; label: string; name: string }> = {
-  "A Block": { x: 120, y: 320, label: "A", name: "Main Administration" },
-  "B Block": { x: 260, y: 150, label: "B", name: "Science & Tech" },
-  "C Block": { x: 420, y: 180, label: "C", name: "Engineering & Lab" },
-  "D Block": { x: 180, y: 80,  label: "D", name: "Computer Applications" },
-  "E Block": { x: 480, y: 350, label: "E", name: "Management & Humanities" },
-};
+import dynamic from "next/dynamic";
+
+const CampusMap = dynamic(() => import("@/components/CampusMap"), {
+  ssr: false,
+  loading: () => (
+    <div className="glassmorphism rounded-2xl border border-surface-4 p-4 h-[380px] flex items-center justify-center">
+      <span className="text-micro text-brand-gray/40">Loading campus map…</span>
+    </div>
+  ),
+});
 
 // ── Flow Step Definitions ───────────────────────────────────────────────────
 const FETCH_DELIVER_STEPS = [
-  { key: "pending",             label: "Scheduled",       icon: Clock },
+  { key: "pending",             label: "Trip Started",    icon: Clock },
   { key: "pickup_in_progress",  label: "Robot at Origin", icon: MapPin },
   { key: "en_route",            label: "En Route",        icon: TruckIcon },
   { key: "arrived",             label: "Arrived",         icon: Bot },
@@ -51,11 +55,11 @@ const FETCH_DELIVER_STEPS = [
 ];
 
 const PRELOADED_STEPS = [
-  { key: "pending",      label: "Scheduled",  icon: Clock },
-  { key: "en_route",     label: "En Route",   icon: TruckIcon },
-  { key: "arrived",      label: "Arrived",    icon: Bot },
-  { key: "otp_verified", label: "Unlocked",   icon: Unlock },
-  { key: "completed",    label: "Done",       icon: CheckCircle2 },
+  { key: "pending",      label: "Trip Started", icon: Clock },
+  { key: "en_route",     label: "En Route",     icon: TruckIcon },
+  { key: "arrived",      label: "Arrived",      icon: Bot },
+  { key: "otp_verified", label: "Unlocked",     icon: Unlock },
+  { key: "completed",    label: "Done",         icon: CheckCircle2 },
 ];
 
 function statusToStepIdx(status: string, preloaded: boolean): number {
@@ -69,27 +73,27 @@ function FlowStepper({ status, isPreloaded }: { status: string; isPreloaded: boo
   const activeIdx = statusToStepIdx(status, isPreloaded);
 
   return (
-    <div className="flex items-center gap-0 w-full overflow-x-auto pb-1">
+    <div className="flex items-center gap-1 w-full overflow-x-auto pb-2 scrollbar-none">
       {steps.map((step, i) => {
         const Icon = step.icon;
         const isDone = i < activeIdx;
         const isActive = i === activeIdx;
         return (
-          <div key={step.key} className="flex items-center flex-1 min-w-0">
+          <div key={step.key} className="flex items-center flex-1 min-w-[70px] sm:min-w-0">
             <div className="flex flex-col items-center flex-1">
               <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all ${
+                className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center border-2 transition-all shrink-0 ${
                   isDone
-                    ? "bg-brand-lime border-brand-lime text-brand-black"
+                    ? "bg-brand-lime border-brand-lime text-brand-black shadow-glow-lime/20"
                     : isActive
                     ? "bg-brand-lime/20 border-brand-lime text-brand-lime animate-pulse"
                     : "bg-surface-2 border-surface-4 text-brand-gray/30"
                 }`}
               >
-                {isDone ? <CheckCircle2 className="h-4 w-4" /> : <Icon className="h-3.5 w-3.5" />}
+                {isDone ? <CheckCircle2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> : <Icon className="h-3 w-3 sm:h-3.5 sm:w-3.5" />}
               </div>
               <span
-                className={`text-micro mt-1 text-center leading-tight ${
+                className={`text-micro mt-1 text-center leading-tight max-w-[65px] sm:max-w-none break-words ${
                   isDone
                     ? "text-brand-lime font-semibold"
                     : isActive
@@ -102,7 +106,7 @@ function FlowStepper({ status, isPreloaded }: { status: string; isPreloaded: boo
             </div>
             {i < steps.length - 1 && (
               <div
-                className={`h-0.5 flex-1 mx-1 rounded transition-all ${
+                className={`h-0.5 flex-1 min-w-[12px] mx-1 rounded transition-all ${
                   i < activeIdx ? "bg-brand-lime" : "bg-surface-4"
                 }`}
               />
@@ -123,7 +127,7 @@ function AnimatedRobotAvatar({ status }: { status: string }) {
   const eyeColor = isDone ? "#10B981" : isArrived ? "#F59E0B" : isMoving ? "#C6FF00" : "#9CA3AF";
 
   return (
-    <g className={isMoving ? "animate-bounce" : ""} style={{ animationDuration: "1.5s" }}>
+    <g className={isMoving ? "animate-drive-wobble" : ""}>
       {/* Pulse Aura */}
       <circle r="22" fill={eyeColor} opacity="0.15">
         <animate attributeName="r" values="22;30;22" dur="2s" repeatCount="indefinite" />
@@ -172,7 +176,36 @@ export default function TrackingPage() {
   const [otpCode, setOtpCode] = useState<string | null>(null);
   const [loadingOtp, setLoadingOtp] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [isCompartmentOpen, setIsCompartmentOpen] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [etaText, setEtaText] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (delivery?.status !== "en_route" || !delivery?.estimated_arrival) {
+      setEtaText(null);
+      return;
+    }
+
+    const updateEta = () => {
+      const targetTime = new Date(delivery.estimated_arrival).getTime();
+      const now = Date.now();
+      const diffMs = targetTime - now;
+      const diffMins = Math.ceil(diffMs / (1000 * 60));
+
+      if (diffMins <= 1) {
+        setEtaText("Arriving any moment.");
+      } else {
+        setEtaText(`Arriving in ~${diffMins} min`);
+      }
+    };
+
+    updateEta();
+    const interval = setInterval(updateEta, 15000);
+    return () => clearInterval(interval);
+  }, [delivery?.status, delivery?.estimated_arrival]);
+
+  const hasNotifiedArrivalRef = useRef(false);
+  const hasNotifiedUnlockedRef = useRef(false);
   const socketRef = useRef<WebSocket | null>(null);
 
   // Fetch Delivery Details
@@ -196,7 +229,8 @@ export default function TrackingPage() {
       }
 
       // Auto-fetch or generate OTP if arrived
-      if (["arrived", "waiting_otp"].includes(data.status) && !otpCode) {
+      if (["arrived", "waiting_otp"].includes(data.status) && !otpCode && !hasNotifiedArrivalRef.current) {
+        hasNotifiedArrivalRef.current = true;
         generateOrFetchOtp();
       }
     } catch (err: any) {
@@ -265,12 +299,14 @@ export default function TrackingPage() {
               receiver_email: msg.receiver_email || prev.receiver_email,
             } : null));
 
-            if (msg.status === "arrived" || msg.status === "waiting_otp") {
-              toast.success("🚨 ALERT: Robot arrived at destination! OTP generated.", { duration: 6000 });
+            if ((msg.status === "arrived" || msg.status === "waiting_otp") && !hasNotifiedArrivalRef.current) {
+              hasNotifiedArrivalRef.current = true;
+              toast.success("🚨 ALERT: Robot arrived at destination! OTP generated.", { duration: 4000 });
               generateOrFetchOtp();
             }
-            if (msg.status === "otp_verified") {
-              toast.success(`🔓 UNLOCKED! Collected by ${msg.receiver_name || "Receiver"}`, { duration: 8000 });
+            if (msg.status === "otp_verified" && !hasNotifiedUnlockedRef.current) {
+              hasNotifiedUnlockedRef.current = true;
+              toast.success(`🔓 UNLOCKED! Collected by ${msg.receiver_name || "Receiver"}`, { duration: 4000 });
             }
           }
           if (msg.robot) {
@@ -369,20 +405,6 @@ export default function TrackingPage() {
     );
   }
 
-  const originBlock = CAMPUS_BLOCKS[delivery.origin_block];
-  const destBlock = CAMPUS_BLOCKS[delivery.destination_block];
-
-  let robotX = originBlock?.x || 120;
-  let robotY = originBlock?.y || 320;
-
-  if (["completed", "returning", "arrived", "waiting_otp", "otp_verified"].includes(delivery.status)) {
-    robotX = destBlock?.x || 260;
-    robotY = destBlock?.y || 150;
-  } else if (delivery.status === "en_route" && robot?.lat && robot?.lng) {
-    robotX = robot.lat;
-    robotY = robot.lng;
-  }
-
   const isPickupPhase = delivery.status === "pickup_in_progress";
   const isArrivedPhase = ["arrived", "waiting_otp"].includes(delivery.status);
   const isUnlocked = ["otp_verified", "completed"].includes(delivery.status);
@@ -468,76 +490,46 @@ export default function TrackingPage() {
       {/* Grid */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
 
-        {/* Left: Campus Map with Animated Simulator Avatar */}
-        <div className="xl:col-span-2 glassmorphism rounded-3xl border border-surface-4 p-6 flex flex-col justify-between h-[480px] relative overflow-hidden">
-          <div className="absolute top-4 left-4 z-10 space-y-1">
-            <h3 className="text-caption font-bold uppercase tracking-wider text-brand-gray/40">Campus Radar Map</h3>
-            <p className="text-micro text-brand-gray/60">Silver Oak University Live Fleet Coordinates</p>
+        {/* Left: Interactive Campus Map */}
+        <div className="xl:col-span-2 glassmorphism rounded-3xl border border-surface-4 p-5 flex flex-col space-y-4 relative overflow-hidden">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 px-1">
+            <div>
+              <h3 className="text-caption font-bold uppercase tracking-wider text-brand-gray/40">Campus Radar Map</h3>
+              <p className="text-micro text-brand-gray/60">Silver Oak University Live Fleet Telemetry</p>
+            </div>
+            <span className="text-micro font-mono text-brand-lime font-semibold shrink-0">
+              {robot?.lat && robot?.lng ? `${robot.lat.toFixed(4)}° N, ${robot.lng.toFixed(4)}° E` : "Silver Oak Campus"}
+            </span>
           </div>
 
-          <div className="flex-1 flex items-center justify-center w-full h-full">
-            <svg viewBox="0 0 600 450" className="w-full h-full max-h-[380px]">
-              <defs>
-                <pattern id="radarGrid" width="40" height="40" patternUnits="userSpaceOnUse">
-                  <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255,255,255,0.02)" strokeWidth="1"/>
-                </pattern>
-              </defs>
-              <rect width="100%" height="100%" fill="url(#radarGrid)" />
-
-              {/* Path line */}
-              {originBlock && destBlock && (
-                <path
-                  d={`M ${originBlock.x} ${originBlock.y} L ${destBlock.x} ${destBlock.y}`}
-                  stroke="#C6FF00"
-                  strokeWidth="2"
-                  strokeDasharray="4 4"
-                  className="opacity-50"
-                />
-              )}
-
-              {/* Campus Blocks */}
-              {Object.entries(CAMPUS_BLOCKS).map(([blockName, b]) => {
-                const isOrigin = blockName === delivery.origin_block;
-                const isDest = blockName === delivery.destination_block;
-                const isSelected = isOrigin || isDest;
-                return (
-                  <g key={blockName} className="cursor-pointer">
-                    <circle
-                      cx={b.x} cy={b.y} r={isSelected ? "18" : "12"}
-                      className={`${
-                        isDest
-                          ? "fill-status-success/20 stroke-status-success"
-                          : isOrigin
-                          ? "fill-brand-lime/20 stroke-brand-lime"
-                          : "fill-surface-3/80 stroke-surface-4"
-                      } transition-all duration-300`}
-                      strokeWidth="2"
-                    />
-                    {isDest && (
-                      <circle cx={b.x} cy={b.y} r="32" className="fill-none stroke-status-success/20 animate-pulse-slow" strokeWidth="1.5" />
-                    )}
-                    <text x={b.x} y={b.y + 4} textAnchor="middle" className="text-[10px] font-extrabold fill-brand-white">{b.label}</text>
-                    <text x={b.x} y={b.y + 24} textAnchor="middle" className={`text-[8px] font-bold ${isSelected ? "fill-brand-lime" : "fill-brand-gray/30"}`}>{blockName}</text>
-                  </g>
-                );
-              })}
-
-              {/* Animated Robot Avatar floating at live position */}
-              <g transform={`translate(${robotX}, ${robotY})`} className="transition-all duration-1000 ease-out">
-                <AnimatedRobotAvatar status={delivery.status} />
-              </g>
-            </svg>
-          </div>
+          <CampusMap
+            robot={
+              robot?.lat && robot?.lng
+                ? { lat: robot.lat, lng: robot.lng, heading: robot?.heading ?? 0 }
+                : undefined
+            }
+            followRobot={delivery.status === "en_route"}
+            height="400px"
+            className="w-full"
+          />
         </div>
 
         {/* Right: OTP Display / Audit & Controls */}
         <div className="space-y-5">
           {/* Mission Intel */}
           <div className="glassmorphism rounded-3xl border border-surface-4 p-5 space-y-4">
-            <h3 className="text-title font-bold flex items-center space-x-2">
-              <Package className="h-5 w-5 text-brand-lime" />
-              <span>Mission Intel</span>
-            </h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-title font-bold flex items-center space-x-2">
+                <Package className="h-5 w-5 text-brand-lime" />
+                <span>Mission Intel</span>
+              </h3>
+              {etaText && (
+                <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-brand-lime/10 border border-brand-lime/30 text-brand-lime text-micro font-extrabold animate-pulse">
+                  <Clock className="h-3.5 w-3.5" />
+                  <span>{etaText}</span>
+                </div>
+              )}
+            </div>
 
             <div className="space-y-3 text-caption">
               <div className="grid grid-cols-2 gap-4 pb-3 border-b border-surface-4/40">
@@ -561,15 +553,20 @@ export default function TrackingPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 pb-3 border-b border-surface-4/40">
-                <div>
-                  <span className="text-brand-gray/40 block text-micro">Route</span>
-                  <span className="font-semibold text-brand-white text-micro">{delivery.origin_block} → {delivery.destination_block}</span>
-                </div>
-                <div>
-                  <span className="text-brand-gray/40 block text-micro">Package</span>
-                  <span className="font-semibold text-brand-white text-micro truncate block">{delivery.package_description} ({delivery.package_weight_kg}kg)</span>
-                </div>
+              <div className="pb-3 border-b border-surface-4/40 space-y-1">
+                <span className="text-brand-gray/40 block text-micro">Route Chain</span>
+                <span className="font-mono text-micro font-bold text-brand-lime block break-words">
+                  {delivery.extra_stops && Array.isArray(delivery.extra_stops) && delivery.extra_stops.length > 0
+                    ? [delivery.origin_block, delivery.destination_block, ...delivery.extra_stops].join(" ➔ ")
+                    : `${delivery.origin_block} ➔ ${delivery.destination_block}`}
+                </span>
+              </div>
+
+              <div className="pb-3 border-b border-surface-4/40">
+                <span className="text-brand-gray/40 block text-micro">Package</span>
+                <span className="font-semibold text-brand-white text-micro truncate block">
+                  {delivery.package_description} ({delivery.package_weight_kg}kg)
+                </span>
               </div>
 
               {robot && (
@@ -653,15 +650,59 @@ export default function TrackingPage() {
           )}
 
           {/* Mission Action Buttons */}
-          <div className="glassmorphism rounded-3xl border border-surface-4 p-5 space-y-3">
+          <div className="glassmorphism rounded-3xl border border-surface-4 p-5 space-y-4">
+            {/* Compartment Toggle */}
+            {["pending", "pickup_in_progress", "en_route"].includes(delivery.status) && (
+              <div className="p-3.5 rounded-2xl bg-surface-1 border border-surface-3 flex items-center justify-between">
+                <div className="flex items-center space-x-2.5">
+                  <div className={`p-2 rounded-xl border ${isCompartmentOpen ? "bg-status-warning/20 border-status-warning text-status-warning" : "bg-brand-lime/20 border-brand-lime text-brand-lime"}`}>
+                    {isCompartmentOpen ? <DoorOpen className="h-5 w-5" /> : <LockKeyhole className="h-5 w-5" />}
+                  </div>
+                  <div>
+                    <span className="text-caption font-bold text-brand-white block">Robot Compartment</span>
+                    <span className={`text-micro font-semibold ${isCompartmentOpen ? "text-status-warning" : "text-brand-lime"}`}>
+                      {isCompartmentOpen ? "Status: Open (Loading)" : "Status: Closed & Locked"}
+                    </span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsCompartmentOpen(!isCompartmentOpen)}
+                  className={`px-3.5 py-2 rounded-xl text-caption font-bold border transition-all ${
+                    isCompartmentOpen
+                      ? "bg-brand-lime text-brand-black border-brand-lime hover:shadow-glow-lime"
+                      : "bg-surface-2 text-brand-white border-surface-4 hover:border-brand-lime/50"
+                  }`}
+                  aria-label={isCompartmentOpen ? "Close Compartment" : "Open Compartment"}
+                >
+                  {isCompartmentOpen ? "Close Compartment" : "Open Compartment"}
+                </button>
+              </div>
+            )}
+
             {delivery.status === "pending" && (
-              <button
-                onClick={handleStartMission}
-                className="w-full py-3 rounded-xl bg-brand-lime text-brand-black font-extrabold hover:shadow-glow-lime transition-all flex items-center justify-center space-x-2"
-              >
-                <Play className="h-5 w-5 fill-current" />
-                <span>{delivery.is_preloaded ? "Dispatch Robot" : "Start Mission — Send Robot to Origin"}</span>
-              </button>
+              <div className="space-y-1.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (isCompartmentOpen) {
+                      toast.warning("Close the compartment before starting the trip!");
+                      return;
+                    }
+                    setShowConfirmModal(true);
+                  }}
+                  disabled={isCompartmentOpen}
+                  className="w-full py-3 rounded-xl bg-brand-lime text-brand-black font-extrabold hover:shadow-glow-lime transition-all flex items-center justify-center space-x-2 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:shadow-none"
+                >
+                  <Play className="h-5 w-5 fill-current" />
+                  <span>{delivery.is_preloaded ? "Dispatch Robot" : "Start Mission — Send Robot to Origin"}</span>
+                </button>
+                {isCompartmentOpen && (
+                  <p className="text-micro text-status-warning text-center font-medium">
+                    Close the compartment before starting the trip
+                  </p>
+                )}
+              </div>
             )}
 
             {delivery.status === "en_route" && (
@@ -683,6 +724,42 @@ export default function TrackingPage() {
           </div>
         </div>
       </div>
+
+      {/* Start Mission Confirmation Modal */}
+      {showConfirmModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-surface-0/80 backdrop-blur-sm">
+          <div className="glassmorphism rounded-3xl border border-surface-4 p-6 max-w-md w-full space-y-5 shadow-2xl animate-in fade-in zoom-in duration-200">
+            <div className="flex items-center space-x-3 text-brand-lime">
+              <div className="p-3 rounded-2xl bg-brand-lime/10 border border-brand-lime/20">
+                <Play className="h-6 w-6 fill-current" />
+              </div>
+              <h3 className="text-title font-extrabold text-brand-white">Start delivery trip?</h3>
+            </div>
+            <p className="text-caption text-brand-gray/70 leading-relaxed">
+              The robot will begin its route and cannot be recalled once dispatched. Ensure all items are safely loaded inside the compartment.
+            </p>
+            <div className="flex items-center justify-end space-x-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowConfirmModal(false)}
+                className="px-4 py-2.5 rounded-xl border border-surface-4 text-brand-gray hover:text-brand-white hover:bg-surface-2 text-caption font-bold transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowConfirmModal(false);
+                  handleStartMission();
+                }}
+                className="px-5 py-2.5 rounded-xl bg-brand-lime text-brand-black text-caption font-extrabold hover:shadow-glow-lime transition-all"
+              >
+                Confirm & Start 🚀
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

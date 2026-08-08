@@ -4,7 +4,9 @@
 
 @layer base {
   body {
-    @apply bg-surface-0 text-brand-white font-sans antialiased selection:bg-brand-lime selection:text-brand-black;
+    background-color: var(--surface-0);
+    color: var(--brand-white);
+    -webkit-font-smoothing: antialiased;
   }
 }
 
@@ -19,11 +21,15 @@
 }
 
 .glassmorphism {
-  @apply bg-surface-2/60 backdrop-blur-md border border-surface-4/40;
+  background-color: var(--surface-1);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--surface-3);
 }
 
 .glassmorphism-premium {
-  @apply bg-surface-1/80 backdrop-blur-lg border border-brand-lime/10 shadow-glow-lime;
+  background-color: var(--surface-1);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--surface-4);
 }
 
 /* ── Custom Scrollbar ────────────────────────────── */
@@ -63,4 +69,84 @@
 
 .ring-indicator {
   animation: ring-pulse 2s infinite;
+}
+
+/* ── Root Theme Variables (Default Dark) ────────────────── */
+:root {
+  --surface-0: #0A0A0A;
+  --surface-1: #111111;
+  --surface-2: #1A1A1A;
+  --surface-3: #222222;
+  --surface-4: #2B2B2B;
+  --brand-white: #F5F5F3;
+  --brand-gray: #EAEAEA;
+  --brand-lime: #C6FF00;
+  --brand-black: #111111;
+  --brand-graphite: #2B2B2B;
+}
+
+/* ── Ather Light Theme (Inspired by Ather Energy App UI) ────────── */
+[data-theme="ather"] {
+  --surface-0: #EBF6F0;
+  --surface-1: #FFFFFF;
+  --surface-2: #F4FAF6;
+  --surface-3: #E0EFE6;
+  --surface-4: #CEE4D7;
+  --brand-white: #0F172A;
+  --brand-gray: #334155;
+  --brand-lime: #84E000;
+  --brand-black: #FFFFFF;
+  --brand-graphite: #EBF6F0;
+}
+
+[data-theme="ather"],
+[data-theme="ather"] body,
+[data-theme="ather"] main {
+  background-color: var(--surface-0) !important;
+  color: var(--brand-white) !important;
+}
+
+[data-theme="ather"] .glassmorphism {
+  background-color: #FFFFFF !important;
+  border-color: #D4E8DC !important;
+  color: #0F172A !important;
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05);
+}
+
+[data-theme="ather"] input,
+[data-theme="ather"] select,
+[data-theme="ather"] textarea {
+  background-color: #FFFFFF !important;
+  color: #0F172A !important;
+  border-color: #CBD5E1 !important;
+}
+
+[data-theme="ather"] input::placeholder,
+[data-theme="ather"] textarea::placeholder {
+  color: #64748B !important;
+}
+
+[data-theme="ather"] .bg-brand-lime {
+  background-color: #84E000 !important;
+  color: #0F172A !important;
+}
+
+[data-theme="ather"] .text-brand-lime {
+  color: #4B9600 !important;
+}
+
+[data-theme="ather"] .border-brand-lime {
+  border-color: #84E000 !important;
+}
+
+[data-theme="ather"] .bg-brand-lime\/10 {
+  background-color: rgba(132, 224, 0, 0.18) !important;
+}
+
+[data-theme="ather"] .bg-brand-lime\/20 {
+  background-color: rgba(132, 224, 0, 0.3) !important;
+}
+
+[data-theme="ather"] .border-brand-lime\/20 {
+  border-color: rgba(132, 224, 0, 0.4) !important;
 }

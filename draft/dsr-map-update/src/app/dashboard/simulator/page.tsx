@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import dynamic from "next/dynamic";
 import RoleGuard from "@/components/RoleGuard";
 import {
   Cpu,
@@ -16,6 +17,16 @@ import {
   AlertTriangle,
   Radio,
 } from "lucide-react";
+
+// Leaflet touches `window`, so it must be loaded client-side only (no SSR)
+const CampusMap = dynamic(() => import("@/components/CampusMap"), {
+  ssr: false,
+  loading: () => (
+    <div className="glassmorphism rounded-2xl border border-surface-4 p-4 h-[280px] flex items-center justify-center">
+      <span className="text-micro text-brand-gray/40">Loading campus map…</span>
+    </div>
+  ),
+});
 
 // ── Types ──────────────────────────────────────────────────────────────────
 type RobotState = "idle" | "dispatched" | "charging" | "emergency_stop" | "fault";
@@ -37,19 +48,20 @@ interface LogEntry {
   type: "success" | "warning" | "error" | "info";
 }
 
-// ── Campus waypoints (Silver Oak campus simulation) ───────────────────────
+// ── Campus waypoints (real Silver Oak University coordinates, Gota) ───────
+// Kept in sync with CAMPUS_WAYPOINTS in src/components/CampusMap.tsx
 const WAYPOINTS = [
-  { lat: 23.0395, lng: 72.5079, label: "A Block" },
-  { lat: 23.0402, lng: 72.5091, label: "B Block" },
-  { lat: 23.0411, lng: 72.5083, label: "C Block" },
-  { lat: 23.0408, lng: 72.5068, label: "D Block" },
-  { lat: 23.0398, lng: 72.5062, label: "E Block" },
-  { lat: 23.0388, lng: 72.5074, label: "Canteen" },
+  { lat: 23.0906, lng: 72.5344, label: "A Block" },
+  { lat: 23.0912, lng: 72.5351, label: "B Block" },
+  { lat: 23.0918, lng: 72.5346, label: "C Block" },
+  { lat: 23.0915, lng: 72.5335, label: "D Block" },
+  { lat: 23.0901, lng: 72.5338, label: "E Block" },
+  { lat: 23.0898, lng: 72.5348, label: "Canteen" },
 ];
 
 const INITIAL_TELEMETRY: Telemetry = {
-  lat: 23.0395,
-  lng: 72.5079,
+  lat: 23.0906,
+  lng: 72.5344,
   speed: 0,
   battery: 87,
   heading: 0,
@@ -77,7 +89,7 @@ function RobotAvatar({ state }: { state: RobotState }) {
   const isEmergency   = state === "emergency_stop";
 
   return (
-    <div className={`relative flex items-center justify-center ${isMoving ? "animate-drive-wobble" : ""}`}>
+    <div className={`relative flex items-center justify-center ${isMoving ? "animate-bounce" : ""}`} style={{ animationDuration: "1.2s" }}>
       <svg width="120" height="130" viewBox="0 0 120 130" fill="none" xmlns="http://www.w3.org/2000/svg">
         {/* Body */}
         <rect x="20" y="45" width="80" height="65" rx="14" fill={isEmergency ? "#EF444430" : "#1F2433"} stroke={isEmergency ? "#EF4444" : isMoving ? "#C6FF00" : isCharging ? "#3B82F6" : "#3A3D4A"} strokeWidth="2"/>
@@ -160,68 +172,6 @@ function RobotAvatar({ state }: { state: RobotState }) {
           </>
         )}
       </svg>
-    </div>
-  );
-}
-
-// ── Campus Mini-Map ────────────────────────────────────────────────────────
-function CampusMap({ telemetry }: { telemetry: Telemetry }) {
-  // Map lat/lng to SVG coords (rough normalization)
-  const LAT_MIN = 23.0385, LAT_MAX = 23.0415;
-  const LNG_MIN = 72.5058, LNG_MAX = 72.5095;
-
-  const toSVG = (lat: number, lng: number) => ({
-    x: ((lng - LNG_MIN) / (LNG_MAX - LNG_MIN)) * 260 + 20,
-    y: ((LAT_MAX - lat) / (LAT_MAX - LAT_MIN)) * 160 + 20,
-  });
-
-  const robotPos = toSVG(telemetry.lat, telemetry.lng);
-
-  return (
-    <div className="glassmorphism rounded-2xl border border-surface-4 p-4">
-      <div className="flex items-center gap-2 mb-3">
-        <Navigation className="h-4 w-4 text-brand-lime" />
-        <span className="text-caption font-bold text-brand-white">Campus Map</span>
-        <span className="ml-auto text-micro text-brand-gray/40">Silver Oak University</span>
-      </div>
-      <div className="relative bg-surface-1 rounded-xl overflow-hidden border border-surface-3">
-        <svg width="300" height="200" className="w-full" viewBox="0 0 300 200">
-          {/* Grid lines */}
-          {[40, 80, 120, 160].map(y => (
-            <line key={`h${y}`} x1="0" y1={y} x2="300" y2={y} stroke="#1F2433" strokeWidth="1"/>
-          ))}
-          {[60, 120, 180, 240].map(x => (
-            <line key={`v${x}`} x1={x} y1="0" x2={x} y2="200" stroke="#1F2433" strokeWidth="1"/>
-          ))}
-
-          {/* Waypoint nodes */}
-          {WAYPOINTS.map((wp, i) => {
-            const pos = toSVG(wp.lat, wp.lng);
-            return (
-              <g key={i}>
-                <circle cx={pos.x} cy={pos.y} r="6" fill="#1F2433" stroke="#3A3D4A" strokeWidth="1.5"/>
-                <circle cx={pos.x} cy={pos.y} r="3" fill="#3A3D4A"/>
-                <text x={pos.x + 9} y={pos.y + 4} fill="#6B7280" fontSize="8" fontFamily="monospace">{wp.label}</text>
-              </g>
-            );
-          })}
-
-          {/* Robot position */}
-          <circle cx={robotPos.x} cy={robotPos.y} r="12" fill="#C6FF00" opacity="0.15">
-            <animate attributeName="r" values="12;18;12" dur="2s" repeatCount="indefinite"/>
-            <animate attributeName="opacity" values="0.15;0;0.15" dur="2s" repeatCount="indefinite"/>
-          </circle>
-          <circle cx={robotPos.x} cy={robotPos.y} r="6" fill="#C6FF00" opacity="0.9"/>
-          <circle cx={robotPos.x} cy={robotPos.y} r="3" fill="#0D0F17"/>
-
-          {/* Heading arrow */}
-          {telemetry.status === "dispatched" && (
-            <g transform={`translate(${robotPos.x},${robotPos.y}) rotate(${telemetry.heading})`}>
-              <path d="M 0 -20 L -4 -12 L 0 -16 L 4 -12 Z" fill="#C6FF00" opacity="0.7"/>
-            </g>
-          )}
-        </svg>
-      </div>
     </div>
   );
 }
@@ -408,7 +358,18 @@ function SimulatorContent() {
           </div>
 
           {/* Campus Map */}
-          <CampusMap telemetry={telemetry} />
+          <div className="glassmorphism rounded-2xl border border-surface-4 p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Navigation className="h-4 w-4 text-brand-lime" />
+              <span className="text-caption font-bold text-brand-white">Campus Map</span>
+              <span className="ml-auto text-micro text-brand-gray/40">Live</span>
+            </div>
+            <CampusMap
+              robot={{ lat: telemetry.lat, lng: telemetry.lng, heading: telemetry.heading }}
+              followRobot={telemetry.status === "dispatched"}
+              height="280px"
+            />
+          </div>
         </div>
 
         {/* ── Centre: Controls + Telemetry ────────────────────────────── */}

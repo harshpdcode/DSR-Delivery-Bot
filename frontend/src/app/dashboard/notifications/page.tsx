@@ -301,6 +301,7 @@ export default function NotificationsPage() {
                     onClick={() => handleMarkRead(item.id)}
                     className="p-1.5 rounded bg-surface-1 hover:bg-surface-3 text-brand-gray hover:text-brand-lime border border-surface-4 transition-colors"
                     title="Mark as Read"
+                    aria-label="Mark as read"
                   >
                     <Check className="h-4 w-4" />
                   </button>
@@ -309,6 +310,7 @@ export default function NotificationsPage() {
                   onClick={() => handleDelete(item.id)}
                   className="p-1.5 rounded bg-surface-1 hover:bg-surface-3 text-brand-gray hover:text-status-error border border-surface-4 transition-colors"
                   title="Dismiss"
+                  aria-label="Dismiss notification"
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>

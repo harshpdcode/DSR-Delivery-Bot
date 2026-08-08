@@ -40,11 +40,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     set({ loading: true, error: null });
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3500);
+
       const res = await fetch("/api/v1/auth/me", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
+        signal: controller.signal,
       });
+      clearTimeout(timeoutId);
 
       if (res.ok) {
         const user = await res.json();

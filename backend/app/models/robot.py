@@ -1,5 +1,5 @@
 """
-DSR Go Ã¢â‚¬â€ Robot Model
+DSR Go — Robot Model
 Represents a physical delivery robot in the fleet.
 """
 

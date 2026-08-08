@@ -100,8 +100,8 @@ async def verify_delivery_otp(
     if not delivery:
         raise HTTPException(status_code=404, detail="Delivery not found")
 
-    if delivery.status != DeliveryStatus.WAITING_OTP:
-        raise HTTPException(status_code=409, detail="Not waiting for OTP")
+    if delivery.status not in (DeliveryStatus.ARRIVED, DeliveryStatus.WAITING_OTP):
+        raise HTTPException(status_code=409, detail="Delivery is not in arrived/waiting OTP state")
 
     # Check expiry
     otp_expires = delivery.otp_expires_at

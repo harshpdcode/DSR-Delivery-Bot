@@ -16,12 +16,24 @@ import {
   RefreshCw,
   Trash2,
   ToggleLeft,
-  ToggleRight
+  ToggleRight,
+  Palette,
+  Sparkles,
+  Zap
 } from "lucide-react";
 import { toast } from "sonner";
+import { useTheme } from "next-themes";
 
 export default function SettingsPage() {
   const { user, token } = useAuthStore();
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  const isAdminOrOperator = user?.role === "admin" || user?.role === "operator";
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<"profile" | "preferences" | "developer">("profile");
 
@@ -95,17 +107,19 @@ export default function SettingsPage() {
           <Bell className="h-4 w-4" />
           <span>Preferences</span>
         </button>
-        <button
-          onClick={() => setActiveTab("developer")}
-          className={`flex-1 py-2 px-3 rounded-lg text-caption font-bold transition-all flex items-center justify-center space-x-2 ${
-            activeTab === "developer"
-              ? "bg-brand-lime text-brand-black shadow"
-              : "text-brand-gray/60 hover:text-brand-white"
-          }`}
-        >
-          <Code className="h-4 w-4" />
-          <span>Developer Tools</span>
-        </button>
+        {isAdminOrOperator && (
+          <button
+            onClick={() => setActiveTab("developer")}
+            className={`flex-1 py-2 px-3 rounded-lg text-caption font-bold transition-all flex items-center justify-center space-x-2 ${
+              activeTab === "developer"
+                ? "bg-brand-lime text-brand-black shadow"
+                : "text-brand-gray/60 hover:text-brand-white"
+            }`}
+          >
+            <Code className="h-4 w-4" />
+            <span>Developer Tools</span>
+          </button>
+        )}
       </div>
 
       {/* Profile Details Tab */}
@@ -172,6 +186,79 @@ export default function SettingsPage() {
       {/* Preferences Tab */}
       {activeTab === "preferences" && (
         <div className="space-y-6">
+          {/* B11: Appearance Theme Switcher */}
+          <div className="glassmorphism rounded-3xl border border-surface-4 p-6 space-y-6">
+            <h3 className="text-title font-bold flex items-center space-x-2">
+              <Palette className="h-5 w-5 text-brand-lime" />
+              <span>Appearance Theme</span>
+            </h3>
+            <p className="text-caption text-brand-gray/50 leading-relaxed">
+              Select your visual interface theme for DSR Go.
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Classic Dark Card */}
+              <div
+                onClick={() => setTheme("classic")}
+                className={`cursor-pointer rounded-2xl p-5 border-2 transition-all flex flex-col justify-between space-y-4 ${
+                  mounted && (theme === "classic" || !theme || theme === "system")
+                    ? "bg-brand-lime/10 border-brand-lime shadow-glow-lime/20 ring-1 ring-brand-lime/40"
+                    : "bg-surface-1 border-surface-3 hover:border-surface-4"
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2.5 rounded-xl bg-brand-lime/20 text-brand-lime border border-brand-lime/30">
+                      <Sparkles className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-brand-white text-body">Classic Dark</h4>
+                      <span className="text-micro text-brand-lime font-semibold">Neon Lime Accent</span>
+                    </div>
+                  </div>
+                  {mounted && (theme === "classic" || !theme || theme === "system") && (
+                    <span className="text-micro font-extrabold text-brand-lime bg-brand-lime/10 px-2 py-0.5 rounded border border-brand-lime/20">
+                      Active ✓
+                    </span>
+                  )}
+                </div>
+                <p className="text-caption text-brand-gray/70">
+                  The signature high-contrast dark palette with Electric Lime (#C6FF00) accents.
+                </p>
+              </div>
+
+              {/* Ather-inspired Card */}
+              <div
+                onClick={() => setTheme("ather")}
+                className={`cursor-pointer rounded-2xl p-5 border-2 transition-all flex flex-col justify-between space-y-4 ${
+                  mounted && theme === "ather"
+                    ? "bg-brand-lime/10 border-brand-lime shadow-glow-lime/20 ring-1 ring-brand-lime/40"
+                    : "bg-surface-1 border-surface-3 hover:border-surface-4"
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2.5 rounded-xl bg-brand-lime/20 text-brand-lime border border-brand-lime/30">
+                      <Zap className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-brand-white text-body">Ather Light Theme</h4>
+                      <span className="text-micro text-brand-lime font-semibold">Mint Light Mode</span>
+                    </div>
+                  </div>
+                  {mounted && theme === "ather" && (
+                    <span className="text-micro font-extrabold text-brand-lime bg-brand-lime/10 px-2 py-0.5 rounded border border-brand-lime/20">
+                      Active ✓
+                    </span>
+                  )}
+                </div>
+                <p className="text-caption text-brand-gray/70">
+                  Fresh mint-green light interface inspired by Ather Energy app UI with electric green accents.
+                </p>
+              </div>
+            </div>
+          </div>
+
           <div className="glassmorphism rounded-3xl border border-surface-4 p-6 space-y-4">
             <h3 className="text-title font-bold flex items-center space-x-2 pb-2 border-b border-surface-4/40">
               <Bell className="h-5 w-5 text-brand-lime" />
@@ -187,6 +274,7 @@ export default function SettingsPage() {
               <button 
                 onClick={() => handleToggle("pref_sound_alerts", soundAlerts, setSoundAlerts)}
                 className="text-brand-lime focus:outline-none"
+                aria-label="Toggle Audio Alert Triggers"
               >
                 {soundAlerts ? <ToggleRight className="h-9 w-9" /> : <ToggleLeft className="h-9 w-9 text-brand-gray/30" />}
               </button>
@@ -201,6 +289,7 @@ export default function SettingsPage() {
               <button 
                 onClick={() => handleToggle("pref_auto_refresh", autoRefresh, setAutoRefresh)}
                 className="text-brand-lime focus:outline-none"
+                aria-label="Toggle On-Screen Auto Synchronization"
               >
                 {autoRefresh ? <ToggleRight className="h-9 w-9" /> : <ToggleLeft className="h-9 w-9 text-brand-gray/30" />}
               </button>
@@ -215,6 +304,7 @@ export default function SettingsPage() {
               <button 
                 onClick={() => handleToggle("pref_priority_delivery", priorityDelivery, setPriorityDelivery)}
                 className="text-brand-lime focus:outline-none"
+                aria-label="Toggle Default Express Routing"
               >
                 {priorityDelivery ? <ToggleRight className="h-9 w-9" /> : <ToggleLeft className="h-9 w-9 text-brand-gray/30" />}
               </button>
@@ -229,6 +319,7 @@ export default function SettingsPage() {
               <button 
                 onClick={() => handleToggle("pref_email_alerts", emailAlerts, setEmailAlerts)}
                 className="text-brand-lime focus:outline-none"
+                aria-label="Toggle Email Receipts"
               >
                 {emailAlerts ? <ToggleRight className="h-9 w-9" /> : <ToggleLeft className="h-9 w-9 text-brand-gray/30" />}
               </button>
@@ -274,12 +365,17 @@ export default function SettingsPage() {
                 </div>
                 <button
                   onClick={handleCopyToken}
-                  className="p-2.5 rounded-lg bg-surface-2 hover:bg-surface-3 border border-surface-4 text-brand-gray hover:text-brand-lime transition-all shrink-0"
-                  title="Copy Token"
+                  className="flex items-center space-x-2 px-3 py-2.5 rounded-lg bg-surface-2 hover:bg-surface-3 border border-surface-4 text-brand-gray hover:text-brand-lime transition-all shrink-0 text-caption font-bold"
+                  title="Copy Session Token"
+                  aria-label="Copy Session Token"
                 >
-                  {copied ? <Check className="h-5 w-5 text-status-success" /> : <Copy className="h-5 w-5" />}
+                  {copied ? <Check className="h-4 w-4 text-status-success" /> : <Copy className="h-4 w-4" />}
+                  <span>{"Copy Session Token"}</span>
                 </button>
               </div>
+              <p className="text-micro text-brand-gray/40">
+                This is your current login session token — it expires and should not be shared or used as a permanent API key.
+              </p>
             </div>
 
             <div className="p-4 rounded-2xl bg-brand-lime/5 border border-brand-lime/10 space-y-2">

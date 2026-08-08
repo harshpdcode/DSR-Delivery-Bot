@@ -1,5 +1,5 @@
 """
-DSR Go Ã¢â‚¬â€ Delivery Model
+DSR Go — Delivery Model
 Tracks a single delivery mission from creation to completion.
 """
 
@@ -70,6 +70,7 @@ class Delivery(Base):
     package_weight_kg = Column(Float, nullable=True)
     priority = Column(String(20), default="normal", nullable=False)
     is_preloaded = Column(Boolean, default=False, nullable=False)
+    extra_stops = Column(Text, nullable=True)
 
     estimated_arrival = Column(DateTime(timezone=True), nullable=True)
     actual_arrival = Column(DateTime(timezone=True), nullable=True)

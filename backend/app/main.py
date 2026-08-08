@@ -11,7 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import ORJSONResponse
 from loguru import logger
-from sqlalchemy import select
+from sqlalchemy import select, text
 
 from app.core.config import get_settings
 from app.core.database import engine, Base, async_session
@@ -25,11 +25,12 @@ from app.routers.tracking import manager
 settings = get_settings()
 
 BLOCK_COORDS = {
-    "A Block": (120.0, 320.0),
-    "B Block": (260.0, 150.0),
-    "C Block": (420.0, 180.0),
-    "D Block": (180.0, 80.0),
-    "E Block": (480.0, 350.0),
+    "A Block": (23.0906, 72.5344),
+    "B Block": (23.0912, 72.5351),
+    "C Block": (23.0918, 72.5346),
+    "D Block": (23.0915, 72.5335),
+    "E Block": (23.0901, 72.5338),
+    "Canteen": (23.0898, 72.5348),
 }
 
 
@@ -123,11 +124,24 @@ async def lifespan(app: FastAPI):
     """Application startup/shutdown lifecycle."""
     logger.info("🚀 DSR Go Backend starting...")
 
+    # Ensure database columns exist
+    async def _ensure_db_columns(conn):
+        for col, col_type in [
+            ("is_preloaded", "BOOLEAN DEFAULT FALSE"),
+            ("extra_stops", "TEXT"),
+            ("estimated_arrival", "TIMESTAMP WITH TIME ZONE"),
+        ]:
+            try:
+                await conn.execute(text(f"ALTER TABLE deliveries ADD COLUMN {col} {col_type};"))
+            except Exception:
+                pass
+
     # Create database tables with instant SQLite fallback
     try:
         async def _init_primary():
             async with engine.begin() as conn:
                 await conn.run_sync(Base.metadata.create_all)
+                await _ensure_db_columns(conn)
         await asyncio.wait_for(_init_primary(), timeout=2.5)
         logger.info("✅ Primary Database tables initialized")
     except Exception as e:
@@ -141,6 +155,7 @@ async def lifespan(app: FastAPI):
         )
         async with database.engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
+            await _ensure_db_columns(conn)
         logger.info("✅ SQLite Local Database fallback ready")
 
     # Auto-seed initial admin/user data

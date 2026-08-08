@@ -302,17 +302,20 @@ All routers mounted under `prefix="/api/v1"` except tracking WebSockets.
 
 ---
 
-## 11. Campus Block Coordinates (SVG Map)
+## 11. Campus Block Coordinates (Leaflet Map)
 
-Used in `/dashboard/delivery/[id]` tracking page:
+Used in `frontend/src/components/CampusMap.tsx` and live delivery tracking:
 
-| Block | Label | SVG X | SVG Y | Name |
-|---|---|---|---|---|
-| A Block | A | 120 | 320 | Main Administration |
-| B Block | B | 260 | 150 | Science & Tech |
-| C Block | C | 420 | 180 | Engineering & Lab |
-| D Block | D | 180 | 80 | Computer Applications |
-| E Block | E | 480 | 350 | Management & Humanities |
+| Block | Label | Latitude | Longitude |
+|---|---|---|---|
+| A Block | A Block | 23.0906 | 72.5344 |
+| B Block | B Block | 23.0912 | 72.5351 |
+| C Block | C Block | 23.0918 | 72.5346 |
+| D Block | D Block | 23.0915 | 72.5335 |
+| E Block | E Block | 23.0901 | 72.5338 |
+| Canteen | Canteen | 23.0898 | 72.5348 |
+
+*Note: These block positions are approximate placeholders around Silver Oak University, Gota, Ahmedabad (23.0906°N, 72.5344°E). Fine-tune coordinates against real Google Maps building pins.*
 
 ---
 

@@ -11,27 +11,20 @@ module.exports = {
       colors: {
         /* ── Brand ────────────────────────── */
         brand: {
-          white: "#F5F5F3",
-          black: "#111111",
-          graphite: "#2B2B2B",
-          gray: "#EAEAEA",
-          lime: "#C6FF00",
+          white: "var(--brand-white, #F5F5F3)",
+          black: "var(--brand-black, #111111)",
+          graphite: "var(--brand-graphite, #2B2B2B)",
+          gray: "var(--brand-gray, #EAEAEA)",
+          lime: "var(--brand-lime, #C6FF00)",
           yellow: "#F5E14B",
         },
-        /* ── Status ───────────────────────── */
-        status: {
-          success: "#22C55E",
-          warning: "#EAB308",
-          error: "#EF4444",
-          info: "#3B82F6",
-        },
-        /* ── Surface (dark theme) ─────────── */
+        /* ── Surface ──────────────────────── */
         surface: {
-          0: "#0A0A0A",
-          1: "#111111",
-          2: "#1A1A1A",
-          3: "#222222",
-          4: "#2B2B2B",
+          0: "var(--surface-0, #0A0A0A)",
+          1: "var(--surface-1, #111111)",
+          2: "var(--surface-2, #1A1A1A)",
+          3: "var(--surface-3, #222222)",
+          4: "var(--surface-4, #2B2B2B)",
         },
       },
       fontFamily: {
@@ -65,6 +58,7 @@ module.exports = {
         "pulse-slow": "pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite",
         "spin-slow": "spin 3s linear infinite",
         "robot-move": "robotMove 2s ease-in-out infinite",
+        "drive-wobble": "driveWobble 0.8s ease-in-out infinite",
       },
       keyframes: {
         fadeIn: {
@@ -82,6 +76,12 @@ module.exports = {
         robotMove: {
           "0%, 100%": { transform: "translateY(0)" },
           "50%": { transform: "translateY(-4px)" },
+        },
+        driveWobble: {
+          "0%, 100%": { transform: "translateY(0) rotate(0deg)" },
+          "25%": { transform: "translateY(-2px) rotate(-3deg)" },
+          "50%": { transform: "translateY(0) rotate(0deg)" },
+          "75%": { transform: "translateY(-2px) rotate(3deg)" },
         },
       },
       backgroundImage: {

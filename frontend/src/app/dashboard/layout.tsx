@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import InstallPwaPrompt from "@/components/InstallPwaPrompt";
+import RobotMovingLoader from "@/components/RobotMovingLoader";
 
 export default function DashboardLayout({
   children,
@@ -32,22 +33,48 @@ export default function DashboardLayout({
   const router = useRouter();
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [mountedTimeout, setMountedTimeout] = useState(false);
 
   useEffect(() => {
-    if (!loading && !token) {
+    const timer = setTimeout(() => setMountedTimeout(true), 2500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (!loading && !token && mountedTimeout) {
       toast.error("Please login to access the dashboard.");
       router.push("/login");
     }
-  }, [user, token, loading, router]);
+  }, [user, token, loading, mountedTimeout, router]);
 
-  if (loading || !token) {
+  const [hasUnread, setHasUnread] = useState(false);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    const checkUnread = () => {
+      try {
+        const saved = localStorage.getItem(`notifications_${user.id}`);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          const unreadCount = parsed.filter((n: any) => n.read === false).length;
+          setHasUnread(unreadCount > 0);
+        } else {
+          setHasUnread(true);
+        }
+      } catch (e) {
+        setHasUnread(false);
+      }
+    };
+    checkUnread();
+  }, [user?.id, pathname]);
+
+  if ((loading || !token) && !mountedTimeout) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-surface-0">
-        <div className="relative flex flex-col items-center">
-          <LoaderSpinner />
-          <p className="mt-4 text-brand-gray/60 font-medium">{"Verifying access..."}</p>
-        </div>
-      </div>
+      <RobotMovingLoader
+        fullScreen={true}
+        label="Verifying DSR Go Access..."
+        subtext="Connecting to Silver Oak Autonomous Robot Fleet..."
+      />
     );
   }
 
@@ -80,6 +107,15 @@ export default function DashboardLayout({
 
   const navItems = [...commonNavItems, ...adminNavItems];
 
+  const mobileNavItems = [
+    { name: "Overview", shortName: "Overview", href: "/dashboard", icon: LayoutDashboard },
+    { name: "Request Delivery", shortName: "Request", href: "/dashboard/delivery/new", icon: PlusSquare },
+    { name: "OTP Parcel Unlock", shortName: "Unlock", href: "/dashboard/otp", icon: KeyRound },
+    { name: "Notifications", shortName: "Alerts", href: "/dashboard/notifications", icon: Bell },
+    ...(isAdminOrOperator ? [{ name: "Fleet Management", shortName: "Fleet", href: "/dashboard/robots", icon: Bot }] : []),
+    { name: "Settings", shortName: "Settings", href: "/dashboard/settings", icon: SettingsIcon },
+  ];
+
   return (
     <div className="min-h-screen bg-surface-0 flex">
       {/* ── Sidebar (Desktop) ── */}
@@ -87,7 +123,7 @@ export default function DashboardLayout({
         <div className="p-6 border-b border-surface-3 flex items-center space-x-2">
           <Bot className="h-7 w-7 text-brand-lime animate-robot-move" />
           <span className="text-lg font-bold tracking-wider text-brand-white">
-            {"DSR Delivery "} <span className="text-brand-lime">{"Bot"}</span>
+            DSR <span className="text-brand-lime">Go</span>
           </span>
         </div>
 
@@ -132,69 +168,18 @@ export default function DashboardLayout({
         </div>
       </aside>
 
-      {/* ── Mobile Sidebar Drawer ── */}
-      {sidebarOpen && (
-        <div className="fixed inset-0 z-50 flex md:hidden bg-surface-0/80 backdrop-blur-sm">
-          <aside className="w-64 bg-surface-1 border-r border-surface-3 flex flex-col h-full">
-            <div className="p-6 border-b border-surface-3 flex justify-between items-center">
-              <div className="flex items-center space-x-2">
-                <Bot className="h-7 w-7 text-brand-lime" />
-                <span className="text-lg font-bold tracking-wider text-brand-white">{"DSR Go"}</span>
-              </div>
-              <button onClick={() => setSidebarOpen(false)} className="text-brand-gray">
-                <X className="h-6 w-6" />
-              </button>
-            </div>
-            <nav className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto">
-              {navItems.map((item) => {
-                const isActive = pathname === item.href;
-                return (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    onClick={() => setSidebarOpen(false)}
-                    className={`flex items-center space-x-3 px-4 py-3 rounded-lg text-body font-semibold transition-all ${
-                      isActive
-                        ? "bg-brand-lime/10 text-brand-lime border-l-2 border-brand-lime"
-                        : "text-brand-gray/60 hover:text-brand-white hover:bg-surface-2"
-                    }`}
-                  >
-                    <item.icon className="h-5 w-5" />
-                    <span>{item.name}</span>
-                  </Link>
-                );
-              })}
-            </nav>
-            <div className="p-4 border-t border-surface-3">
-              <button
-                onClick={handleLogout}
-                className="w-full flex items-center space-x-2 px-4 py-2.5 rounded-lg border border-surface-4 text-brand-gray/60 hover:text-status-error hover:bg-status-error/10 hover:border-status-error/20 transition-colors text-caption font-bold"
-              >
-                <LogOut className="h-4.5 w-4.5" />
-                <span>{"Sign Out"}</span>
-              </button>
-            </div>
-          </aside>
-        </div>
-      )}
-
       {/* ── Main Content Area ── */}
       <div className="flex-1 flex flex-col min-w-0 overflow-x-hidden">
         {/* Header */}
-        <header className="h-16 bg-surface-1 border-b border-surface-3 flex items-center justify-between px-6 shrink-0 z-20">
-          <div className="flex items-center space-x-4">
-            <button
-              onClick={() => setSidebarOpen(true)}
-              className="md:hidden text-brand-gray focus:outline-none"
-            >
-              <Menu className="h-6 w-6" />
-            </button>
-            <h2 className="text-title font-bold text-brand-white tracking-tight">
+        <header className="h-16 bg-surface-1 border-b border-surface-3 flex items-center justify-between px-4 sm:px-6 shrink-0 z-20">
+          <div className="flex items-center space-x-3">
+            <Bot className="h-6 w-6 text-brand-lime md:hidden" />
+            <h2 className="text-body sm:text-title font-bold text-brand-white tracking-tight truncate max-w-[180px] sm:max-w-none">
               {navItems.find((item) => item.href === pathname)?.name || "Dashboard"}
             </h2>
           </div>
 
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2 sm:space-x-4">
             {/* Install PWA Button */}
             <InstallPwaPrompt />
 
@@ -208,18 +193,52 @@ export default function DashboardLayout({
             </Link>
 
             {/* Notification Badge */}
-            <Link href="/dashboard/notifications" className="relative p-2 rounded-lg bg-surface-2 hover:bg-surface-3 transition-colors text-brand-gray hover:text-brand-lime">
+            <Link href="/dashboard/notifications" className="relative p-2 rounded-lg bg-surface-2 hover:bg-surface-3 transition-colors text-brand-gray hover:text-brand-lime" aria-label="Notifications">
               <Bell className="h-5 w-5" />
-              <span className="absolute top-1 right-1 h-2.5 w-2.5 bg-brand-lime rounded-full ring-2 ring-surface-1" />
+              {hasUnread && (
+                <span className="absolute top-1 right-1 h-2.5 w-2.5 bg-brand-lime rounded-full ring-2 ring-surface-1" />
+              )}
             </Link>
           </div>
         </header>
 
-        {/* Inner Content with custom scrollbar behavior */}
-        <main className="flex-1 overflow-y-auto p-6 md:p-8 bg-surface-0 bg-grid">
+        {/* Inner Content */}
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 bg-surface-0 bg-grid pb-28 md:pb-8">
           {children}
         </main>
       </div>
+
+      {/* ── Mobile Bottom Fixed Navigation Bar (Phone View) ── */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-surface-1/95 backdrop-blur-xl border-t border-surface-3 px-2 py-1.5 flex items-center justify-around shadow-2xl">
+        {mobileNavItems.map((item) => {
+          const isActive = pathname === item.href;
+          const Icon = item.icon;
+          return (
+            <Link
+              key={item.name}
+              href={item.href}
+              className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all relative ${
+                isActive
+                  ? "text-brand-lime font-extrabold scale-105"
+                  : "text-brand-gray/60 hover:text-brand-white"
+              }`}
+            >
+              <div className="relative">
+                <Icon className={`h-5 w-5 ${isActive ? "text-brand-lime" : ""}`} />
+                {item.href === "/dashboard/notifications" && hasUnread && (
+                  <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-brand-lime ring-2 ring-surface-1" />
+                )}
+              </div>
+              <span className="text-[10px] font-semibold mt-0.5 tracking-tight truncate max-w-[60px]">
+                {item.shortName}
+              </span>
+              {isActive && (
+                <span className="h-1 w-4 rounded-full bg-brand-lime mt-0.5 shadow-glow-lime" />
+              )}
+            </Link>
+          );
+        })}
+      </nav>
     </div>
   );
 }

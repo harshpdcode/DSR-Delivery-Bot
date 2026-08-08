@@ -128,6 +128,7 @@ class CreateDeliveryRequest(BaseModel):
     package_weight_kg: Optional[float] = None
     priority: str = "normal"
     is_preloaded: bool = False
+    extra_stops: Optional[List[str]] = None
 
 
 class DeliveryResponse(BaseModel):
@@ -143,6 +144,7 @@ class DeliveryResponse(BaseModel):
     receiver_email: Optional[str] = None
     origin_block: str
     destination_block: str
+    extra_stops: Optional[List[str]] = None
     status: str
     package_description: Optional[str]
     package_weight_kg: Optional[float]

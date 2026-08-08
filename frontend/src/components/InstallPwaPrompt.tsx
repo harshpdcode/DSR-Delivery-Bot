@@ -17,7 +17,7 @@ export default function InstallPwaPrompt() {
     const handleAppInstalled = () => {
       setIsInstalled(true);
       setDeferredPrompt(null);
-      toast.success("DSR Delivery Bot installed successfully on your device!");
+      toast.success("DSR Go installed successfully on your device!");
     };
 
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
@@ -35,22 +35,21 @@ export default function InstallPwaPrompt() {
   }, []);
 
   const handleInstallClick = async () => {
-    if (!deferredPrompt) {
-      toast.info("To install on iOS/Safari: tap Share ➔ Add to Home Screen. On Android/Chrome: tap 3 dots ➔ Install app.");
-      return;
-    }
-
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === "accepted") {
-      setDeferredPrompt(null);
-      toast.success("Installing DSR Delivery Bot...");
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === "accepted") {
+        setDeferredPrompt(null);
+        toast.success("Installing DSR Go app on your phone...");
+      }
+    } else {
+      toast.info("📲 Tap your browser menu (⋮ or Share) ➔ Select 'Install app' to install DSR Go on your phone.");
     }
   };
 
   if (isInstalled) {
     return (
-      <div className="flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-surface-2 border border-brand-lime/30 text-brand-lime text-micro font-bold">
+      <div className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg bg-surface-2 border border-brand-lime/30 text-brand-lime text-micro font-bold">
         <Check className="h-3.5 w-3.5" />
         <span>{"App Installed"}</span>
       </div>
@@ -60,11 +59,11 @@ export default function InstallPwaPrompt() {
   return (
     <button
       onClick={handleInstallClick}
-      className="flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-gradient-to-r from-brand-lime/20 to-brand-lime/10 border border-brand-lime/40 text-brand-lime hover:bg-brand-lime hover:text-brand-black transition-all text-micro font-bold shadow-glow-lime/20 group"
-      title="Install DSR Delivery Bot app on your mobile device"
+      className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-brand-lime text-brand-black hover:scale-105 transition-all text-micro font-extrabold shadow-glow-lime/30 group cursor-pointer"
+      title="Install DSR Go app on your mobile device"
     >
       <Smartphone className="h-4 w-4 group-hover:scale-110 transition-transform" />
-      <span className="hidden sm:inline">{"Install App"}</span>
+      <span className="inline font-bold">{"Install App"}</span>
       <Download className="h-3.5 w-3.5" />
     </button>
   );
