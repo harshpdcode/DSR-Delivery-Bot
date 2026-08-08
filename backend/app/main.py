@@ -123,10 +123,12 @@ async def lifespan(app: FastAPI):
     """Application startup/shutdown lifecycle."""
     logger.info("🚀 DSR Go Backend starting...")
 
-    # Create database tables with SQLite fallback for local development
+    # Create database tables with instant SQLite fallback
     try:
-        async with engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
+        async def _init_primary():
+            async with engine.begin() as conn:
+                await conn.run_sync(Base.metadata.create_all)
+        await asyncio.wait_for(_init_primary(), timeout=2.5)
         logger.info("✅ Primary Database tables initialized")
     except Exception as e:
         logger.warning(f"⚠️ Primary DB connection unavailable ({e}). Initializing SQLite local fallback...")
