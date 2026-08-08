@@ -9,20 +9,38 @@ async def seed():
         await conn.run_sync(Base.metadata.create_all)
         
     async with async_session() as session:
-        from sqlalchemy import select
+        from sqlalchemy import select, delete
         
+        # Remove legacy test@example.com user if present
+        await session.execute(delete(User).where(User.email == "test@example.com"))
+        await session.commit()
+
         users_to_seed = [
             {
-                "email": "test@example.com",
-                "full_name": "Test Admin",
-                "password": "password123",
+                "email": "admin",
+                "full_name": "System Admin",
+                "password": "admin123",
                 "role": UserRole.ADMIN,
                 "phone": "+1234567890"
             },
             {
+                "email": "admin@example.com",
+                "full_name": "System Admin",
+                "password": "admin123",
+                "role": UserRole.ADMIN,
+                "phone": "+1234567890"
+            },
+            {
+                "email": "user",
+                "full_name": "Campus User",
+                "password": "user123",
+                "role": UserRole.USER,
+                "phone": "+1987654321"
+            },
+            {
                 "email": "user@example.com",
-                "full_name": "Test User",
-                "password": "password123",
+                "full_name": "Campus User",
+                "password": "user123",
                 "role": UserRole.USER,
                 "phone": "+1987654321"
             }
@@ -43,8 +61,14 @@ async def seed():
                     phone=user_data["phone"]
                 )
                 session.add(new_user)
-                await session.commit()
-                print(f"User {user_data['email']} created successfully!")
+            else:
+                existing_user.hashed_password = hash_password(user_data["password"])
+                existing_user.role = user_data["role"]
+                existing_user.is_active = True
+                existing_user.is_verified = True
+        
+        await session.commit()
+        print("Admin and User credentials seeded successfully!")
 
         # Seed initial fleet robots if empty
         from app.models.robot import Robot, RobotStatus

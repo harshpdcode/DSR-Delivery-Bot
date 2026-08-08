@@ -48,10 +48,10 @@ The application will be accessible at:
 
 ## 🔐 Credentials (Demo / Testing)
 
-| Role | Email | Password | Phone |
+| Role | Email / Username | Password | Phone |
 | :--- | :--- | :--- | :--- |
-| **Admin** | `test@example.com` | `password123` | `+1234567890` |
-| **User** | `user@example.com` | `password123` | `+1987654321` |
+| **Admin** | `admin` (or `admin@example.com`) | `admin123` | `+1234567890` |
+| **User** | `user` (or `user@example.com`) | `user123` | `+1987654321` |
 
 ---
 

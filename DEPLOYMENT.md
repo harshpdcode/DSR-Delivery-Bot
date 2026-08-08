@@ -104,5 +104,5 @@ npm run dev
 
 | Role | Email | Default Password |
 | :--- | :--- | :--- |
-| **Admin** | `test@example.com` | `password123` |
-| **User** | `user@example.com` | `password123` |
+| **Admin** | `admin` (or `admin@example.com`) | `admin123` |
+| **User** | `user` (or `user@example.com`) | `user123` |
