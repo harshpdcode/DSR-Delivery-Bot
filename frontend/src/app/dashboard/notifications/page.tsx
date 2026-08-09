@@ -215,15 +215,15 @@ export default function NotificationsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
         <div>
-          <h1 className="text-display font-extrabold tracking-tight flex items-center space-x-3">
-            <span>Alerts & Notifications</span>
+          <div className="flex items-center space-x-3 flex-wrap gap-2">
+            <h1 className="text-display font-extrabold tracking-tight text-brand-white">Alerts & Notifications</h1>
             {unreadCount > 0 && (
-              <span className="text-caption font-extrabold bg-brand-lime text-brand-black px-2.5 py-0.5 rounded-full ring-4 ring-brand-lime/20">
+              <span className="shrink-0 whitespace-nowrap text-caption font-extrabold bg-brand-lime text-brand-black px-3 py-1 rounded-full border border-brand-lime/40 shadow-xs inline-flex items-center gap-1">
                 {unreadCount} New
               </span>
             )}
-          </h1>
-          <p className="text-body text-brand-gray/50">
+          </div>
+          <p className="text-body text-brand-gray/50 mt-1">
             Monitor real-time system alerts, delivery completions, and security warnings.
           </p>
         </div>
