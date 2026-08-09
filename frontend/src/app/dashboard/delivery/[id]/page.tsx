@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
+import { getWsUrl } from "@/lib/ws";
 
 import dynamic from "next/dynamic";
 
@@ -275,52 +276,85 @@ export default function TrackingPage() {
   useEffect(() => {
     if (!id || !token) return;
 
-    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const wsUrl = `${protocol}//${window.location.host}/ws/tracking/${id}`;
+    let isMounted = true;
+    let reconnectTimer: NodeJS.Timeout | null = null;
 
     const connectWs = () => {
+      if (!isMounted) return;
+
+      const wsUrl = getWsUrl(`/ws/tracking/${id}`);
       const socket = new WebSocket(wsUrl);
       socketRef.current = socket;
 
-      socket.onopen = () => setSocketConnected(true);
+      socket.onopen = () => {
+        if (isMounted) setSocketConnected(true);
+      };
 
       socket.onmessage = (event) => {
-        const msg = JSON.parse(event.data);
-        if (msg.type === "initial" || msg.type === "telemetry" || msg.type === "status_change") {
-          if (msg.status) {
-            setDelivery((prev: any) => (prev ? {
-              ...prev,
-              status: msg.status,
-              receiver_name: msg.receiver_name || prev.receiver_name,
-              receiver_email: msg.receiver_email || prev.receiver_email,
-            } : null));
+        if (!isMounted) return;
+        try {
+          const msg = JSON.parse(event.data);
+          if (msg.type === "initial" || msg.type === "telemetry" || msg.type === "status_change") {
+            if (msg.status) {
+              setDelivery((prev: any) => (prev ? {
+                ...prev,
+                status: msg.status,
+                receiver_name: msg.receiver_name || prev.receiver_name,
+                receiver_email: msg.receiver_email || prev.receiver_email,
+              } : null));
 
-            if ((msg.status === "arrived" || msg.status === "waiting_otp") && !hasNotifiedArrivalRef.current) {
-              hasNotifiedArrivalRef.current = true;
-              toast.success("🚨 ALERT: Robot arrived at destination! OTP generated.", { duration: 4000 });
-              generateOrFetchOtp();
+              if ((msg.status === "arrived" || msg.status === "waiting_otp") && !hasNotifiedArrivalRef.current) {
+                hasNotifiedArrivalRef.current = true;
+                toast.success("🚨 ALERT: Robot arrived at destination! OTP generated.", { duration: 4000 });
+                generateOrFetchOtp();
+              }
+              if (msg.status === "otp_verified" && !hasNotifiedUnlockedRef.current) {
+                hasNotifiedUnlockedRef.current = true;
+                toast.success(`🔓 UNLOCKED! Collected by ${msg.receiver_name || "Receiver"}`, { duration: 4000 });
+              }
             }
-            if (msg.status === "otp_verified" && !hasNotifiedUnlockedRef.current) {
-              hasNotifiedUnlockedRef.current = true;
-              toast.success(`🔓 UNLOCKED! Collected by ${msg.receiver_name || "Receiver"}`, { duration: 4000 });
+            if (msg.robot) {
+              setRobot((prev: any) => (prev ? { ...prev, ...msg.robot } : msg.robot));
             }
           }
-          if (msg.robot) {
-            setRobot((prev: any) => (prev ? { ...prev, ...msg.robot } : msg.robot));
-          }
+        } catch (e) {
+          console.error("Failed to parse tracking WebSocket message:", e);
         }
       };
 
       socket.onclose = () => {
-        setSocketConnected(false);
-        setTimeout(connectWs, 3000);
+        if (isMounted) {
+          setSocketConnected(false);
+          reconnectTimer = setTimeout(connectWs, 3000);
+        }
       };
 
-      socket.onerror = () => socket.close();
+      socket.onerror = () => {
+        if (socket.readyState === WebSocket.OPEN) {
+          socket.close();
+        }
+      };
     };
 
     connectWs();
-    return () => { if (socketRef.current) socketRef.current.close(); };
+
+    return () => {
+      isMounted = false;
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+      if (socketRef.current) {
+        socketRef.current.onopen = null;
+        socketRef.current.onmessage = null;
+        socketRef.current.onclose = null;
+        socketRef.current.onerror = null;
+        if (
+          socketRef.current.readyState === WebSocket.OPEN ||
+          socketRef.current.readyState === WebSocket.CONNECTING
+        ) {
+          socketRef.current.close();
+        }
+        socketRef.current = null;
+      }
+    };
   }, [id, token]);
 
   // Actions

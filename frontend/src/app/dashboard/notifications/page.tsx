@@ -15,6 +15,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
+import { getWsUrl } from "@/lib/ws";
+
 interface NotificationItem {
   id: string;
   title: string;
@@ -97,62 +99,88 @@ export default function NotificationsPage() {
   useEffect(() => {
     if (!user?.id || !token) return;
 
-    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const wsUrl = `${protocol}//${window.location.host}/ws/notifications/${user.id}`;
-    
+    let isMounted = true;
+    let reconnectTimer: NodeJS.Timeout | null = null;
+
     const connectWs = () => {
+      if (!isMounted) return;
+
+      const wsUrl = getWsUrl(`/ws/notifications/${user.id}`);
       const socket = new WebSocket(wsUrl);
       socketRef.current = socket;
 
       socket.onopen = () => {
-        console.log("Notification Socket Connected");
+        if (isMounted) {
+          console.log("Notification Socket Connected");
+        }
       };
 
       socket.onmessage = (event) => {
-        const msg = JSON.parse(event.data);
-        
-        // Skip pings
-        if (msg.type === "pong") return;
+        if (!isMounted) return;
+        try {
+          const msg = JSON.parse(event.data);
+          
+          // Skip pings
+          if (msg.type === "pong") return;
 
-        const newNotification: NotificationItem = {
-          id: msg.id || `notif-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          title: msg.title || "Alert Broadcast",
-          body: msg.body || "A telemetry event or status change was recorded.",
-          type: msg.type || "info",
-          read: false,
-          timestamp: new Date(),
-        };
+          const newNotification: NotificationItem = {
+            id: msg.id || `notif-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            title: msg.title || "Alert Broadcast",
+            body: msg.body || "A telemetry event or status change was recorded.",
+            type: msg.type || "info",
+            read: false,
+            timestamp: new Date(),
+          };
 
-        // Trigger Sonner toast
-        if (newNotification.type === "success") {
-          toast.success(newNotification.title, { description: newNotification.body });
-        } else if (newNotification.type === "error") {
-          toast.error(newNotification.title, { description: newNotification.body });
-        } else {
-          toast(newNotification.title, { description: newNotification.body });
+          // Trigger Sonner toast
+          if (newNotification.type === "success") {
+            toast.success(newNotification.title, { description: newNotification.body });
+          } else if (newNotification.type === "error") {
+            toast.error(newNotification.title, { description: newNotification.body });
+          } else {
+            toast(newNotification.title, { description: newNotification.body });
+          }
+
+          setNotifications((prev) => {
+            const updated = [newNotification, ...prev];
+            localStorage.setItem(`notifications_${user.id}`, JSON.stringify(updated));
+            return updated;
+          });
+        } catch (e) {
+          console.error("Failed to parse WebSocket notification:", e);
         }
-
-        setNotifications((prev) => {
-          const updated = [newNotification, ...prev];
-          localStorage.setItem(`notifications_${user.id}`, JSON.stringify(updated));
-          return updated;
-        });
       };
 
       socket.onclose = () => {
-        setTimeout(connectWs, 5000);
+        if (isMounted) {
+          reconnectTimer = setTimeout(connectWs, 5000);
+        }
       };
 
       socket.onerror = () => {
-        socket.close();
+        if (socket.readyState === WebSocket.OPEN) {
+          socket.close();
+        }
       };
     };
 
     connectWs();
 
     return () => {
+      isMounted = false;
+      if (reconnectTimer) clearTimeout(reconnectTimer);
       if (socketRef.current) {
-        socketRef.current.close();
+        socketRef.current.onopen = null;
+        socketRef.current.onmessage = null;
+        socketRef.current.onclose = null;
+        socketRef.current.onerror = null;
+        if (
+          socketRef.current.readyState === WebSocket.OPEN ||
+          socketRef.current.readyState === WebSocket.CONNECTING
+        ) {
+          socketRef.current.close();
+        }
+        socketRef.current = null;
       }
     };
   }, [user, token]);
