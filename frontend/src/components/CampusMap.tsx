@@ -25,25 +25,25 @@ export const CAMPUS_WAYPOINTS: CampusWaypoint[] = [
   { lat: 23.0898, lng: 72.5348, label: "Canteen" },
 ];
 
-// ── Custom Robo.webp robot marker ─────────
-function robotIcon(heading = 0, isAnimated = false) {
+// Custom Robo.webp robot marker
+function robotIcon(heading = 0) {
   return L.divIcon({
     className: "",
     html: `
       <div style="
-        width:44px;height:44px;position:relative;
+        width:38px;height:38px;position:relative;
         transform:rotate(${heading}deg);
         transition: transform 0.4s ease-out;
       ">
         <div style="
-          position:absolute;inset:-6px;border-radius:9999px;
+          position:absolute;inset:-5px;border-radius:9999px;
           background:#84E000;opacity:0.35;
           animation:campusPulse 2s ease-out infinite;
         "></div>
         <div style="
           position:absolute;inset:0;border-radius:9999px;
           background:#FFE234;border:2px solid #0F172A;
-          box-shadow:0 0 14px rgba(132,224,0,0.85);
+          box-shadow:0 0 10px rgba(132,224,0,0.85);
           display:flex;align-items:center;justify-content:center;
           overflow:hidden;padding:2px;
         ">
@@ -53,35 +53,40 @@ function robotIcon(heading = 0, isAnimated = false) {
       <style>
         @keyframes campusPulse {
           0% { transform: scale(0.7); opacity: 0.5; }
-          100% { transform: scale(1.7); opacity: 0; }
+          100% { transform: scale(1.6); opacity: 0; }
         }
       </style>
     `,
-    iconSize: [44, 44],
-    iconAnchor: [22, 22],
+    iconSize: [38, 38],
+    iconAnchor: [19, 19],
   });
 }
 
-// Static waypoint (block) marker
+// Compact building waypoint badge
 const blockIcon = (label: string) => L.divIcon({
   className: "",
   html: `
     <div style="
-      padding: 3px 8px;
-      background: rgba(15, 23, 42, 0.85);
-      border: 1.5px solid #84E000;
-      border-radius: 8px;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      padding: 2px 6px;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid #84E000;
+      border-radius: 6px;
       color: #FFFFFF;
-      font-size: 10px;
-      font-weight: 800;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+      font-size: 9px;
+      font-weight: 700;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.4);
       white-space: nowrap;
+      pointer-events: auto;
     ">
-      ${label}
+      <span style="width:4px;height:4px;border-radius:9999px;background:#84E000;display:inline-block;"></span>
+      <span>${label}</span>
     </div>
   `,
-  iconSize: [60, 24],
-  iconAnchor: [30, 12],
+  iconSize: [46, 18],
+  iconAnchor: [23, 9],
 });
 
 function FollowRobot({ position, follow }: { position: [number, number]; follow: boolean }) {
@@ -114,7 +119,6 @@ export interface RobotEntry {
 }
 
 export interface CampusMapProps {
-  /** Single robot or multiple robots */
   robot?: RobotEntry;
   robotsList?: RobotEntry[];
   waypoints?: CampusWaypoint[];
@@ -131,7 +135,7 @@ export default function CampusMap({
   waypoints = CAMPUS_WAYPOINTS,
   trail,
   followRobot = false,
-  height = "340px",
+  height = "320px",
   className = "",
   isDarkTheme,
 }: CampusMapProps) {
@@ -170,7 +174,6 @@ export default function CampusMap({
         const dist = Math.sqrt(dLat * dLat + dLng * dLng);
 
         if (dist > 0.000001) {
-          // Move 5% closer each frame for smooth fluid gliding
           const nextLat = curLat + dLat * 0.05;
           const nextLng = curLng + dLng * 0.05;
           setAnimatedPos([nextLat, nextLng]);
@@ -193,7 +196,6 @@ export default function CampusMap({
     return [];
   }, [robotsList, robot]);
 
-  // Default path coordinates for visualization
   const routePolyline = useMemo<[number, number][]>(() => {
     if (trail && trail.length > 1) return trail;
     return waypoints.map(w => [w.lat, w.lng]);
@@ -201,19 +203,19 @@ export default function CampusMap({
 
   return (
     <div
-      className={`relative rounded-2xl overflow-hidden border border-surface-3 ${className}`}
+      className={`relative rounded-2xl overflow-hidden border border-surface-3 isolation-isolate z-0 ${className}`}
       style={{ height, minHeight: height }}
     >
       <MapContainer
         center={animatedPos || CAMPUS_CENTER}
         zoom={17}
         scrollWheelZoom={true}
-        style={{ height: "100%", width: "100%", background: isDark ? "#0A0A0A" : "#EBF6F0" }}
+        style={{ height: "100%", width: "100%", background: isDark ? "#0A0A0A" : "#EBF6F0", zIndex: 1 }}
       >
         <MapResizer />
         <TileLayer
           key={isDark ? "dark-map" : "light-map"}
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url={tileUrl}
           subdomains={["a", "b", "c", "d"]}
         />
@@ -224,9 +226,9 @@ export default function CampusMap({
             positions={routePolyline} 
             pathOptions={{ 
               color: isDark ? "#84E000" : "#4B9600", 
-              weight: 3.5, 
-              opacity: 0.7,
-              dashArray: "6, 8"
+              weight: 3, 
+              opacity: 0.65,
+              dashArray: "5, 7"
             }} 
           />
         )}
@@ -236,17 +238,17 @@ export default function CampusMap({
           <Marker key={i} position={[wp.lat, wp.lng]} icon={blockIcon(wp.label)}>
             <Popup>
               <div className="font-bold text-caption text-[#0F172A]">
-                📍 Campus Building: {wp.label}
+                📍 Building: {wp.label}
               </div>
             </Popup>
           </Marker>
         ))}
 
-        {/* Multiple Fleet Robots */}
+        {/* Fleet Robots */}
         {allRobots.map((r, idx) => {
           const pos: [number, number] = (idx === 0 && animatedPos) ? animatedPos : [r.lat, r.lng];
           return (
-            <Marker key={r.id || idx} position={pos} icon={robotIcon(r.heading ?? 45, true)}>
+            <Marker key={r.id || idx} position={pos} icon={robotIcon(r.heading ?? 45)}>
               <Popup>
                 <div className="p-1 text-caption space-y-1">
                   <p className="font-extrabold text-[#0F172A]">{r.name || `DSR Bot #${r.id || idx + 1}`}</p>
@@ -260,10 +262,35 @@ export default function CampusMap({
         {animatedPos && <FollowRobot position={animatedPos} follow={followRobot} />}
       </MapContainer>
 
-      <div className="absolute top-3 right-3 z-[400] bg-surface-1/90 backdrop-blur-md px-3 py-1.5 rounded-xl border border-surface-3 text-micro font-bold text-brand-white pointer-events-none shadow-md flex items-center space-x-2">
-        <span className="h-2 w-2 rounded-full bg-brand-lime animate-ping" />
-        <span>Silver Oak Live Campus Telemetry</span>
+      {/* Campus Radar Badge */}
+      <div className="absolute top-2 right-2 z-[10] bg-surface-1/90 backdrop-blur-md px-2.5 py-1 rounded-lg border border-surface-3 text-[10px] font-bold text-brand-white pointer-events-none shadow-sm flex items-center space-x-1.5">
+        <span className="h-1.5 w-1.5 rounded-full bg-brand-lime animate-pulse" />
+        <span className="hidden sm:inline">Silver Oak Live Campus Telemetry</span>
+        <span className="sm:hidden">Silver Oak Telemetry</span>
       </div>
+
+      <style jsx global>{`
+        .leaflet-container {
+          z-index: 1 !important;
+        }
+        .leaflet-top, .leaflet-bottom {
+          z-index: 5 !important;
+        }
+        .leaflet-control-attribution {
+          font-size: 8px !important;
+          background: rgba(15, 23, 42, 0.7) !important;
+          color: #94A3B8 !important;
+          padding: 1px 4px !important;
+          border-radius: 4px;
+          max-width: 140px;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .leaflet-control-attribution a {
+          color: #84E000 !important;
+        }
+      `}</style>
     </div>
   );
 }

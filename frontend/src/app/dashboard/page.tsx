@@ -148,10 +148,10 @@ export default function DashboardOverview() {
           </div>
           <Link
             href="/dashboard/delivery/new"
-            className="text-caption font-bold text-brand-lime px-3 py-1.5 rounded-lg bg-brand-lime/10 hover:bg-brand-lime hover:text-brand-black transition-all flex items-center space-x-1"
+            className="shrink-0 whitespace-nowrap text-caption font-bold text-brand-lime px-3 py-1.5 rounded-lg bg-brand-lime/10 hover:bg-brand-lime hover:text-brand-black transition-all inline-flex items-center space-x-1.5 cursor-pointer"
           >
             <Plus className="h-4 w-4" />
-            <span>New</span>
+            <span>+ New</span>
           </Link>
         </div>
 
