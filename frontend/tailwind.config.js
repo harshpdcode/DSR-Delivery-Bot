@@ -9,16 +9,19 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        /* ── Brand ────────────────────────── */
+        /* ── Brand Colors ────────────────────────── */
         brand: {
           white: "var(--brand-white, #F5F5F3)",
           black: "var(--brand-black, #111111)",
           graphite: "var(--brand-graphite, #2B2B2B)",
           gray: "var(--brand-gray, #EAEAEA)",
           lime: "var(--brand-lime, #C6FF00)",
-          yellow: "#F5E14B",
+          yellow: "#FFE234",
+          mint: "#9CFF7A",
+          teal: "#A8EFE1",
+          darkcard: "#141414",
         },
-        /* ── Surface ──────────────────────── */
+        /* ── Surface Colors ──────────────────────── */
         surface: {
           0: "var(--surface-0, #0A0A0A)",
           1: "var(--surface-1, #111111)",

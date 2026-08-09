@@ -88,7 +88,7 @@ export default function DashboardLayout({
 
   // Items visible to ALL authenticated users
   const commonNavItems = [
-    { name: "Overview", href: "/dashboard", icon: LayoutDashboard },
+    { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { name: "OTP Parcel Unlock", href: "/dashboard/otp", icon: KeyRound },
     { name: "Request Delivery", href: "/dashboard/delivery/new", icon: PlusSquare },
     { name: "Notifications", href: "/dashboard/notifications", icon: Bell },
@@ -108,7 +108,7 @@ export default function DashboardLayout({
   const navItems = [...commonNavItems, ...adminNavItems];
 
   const mobileNavItems = [
-    { name: "Overview", shortName: "Overview", href: "/dashboard", icon: LayoutDashboard },
+    { name: "Dashboard", shortName: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { name: "Request Delivery", shortName: "Request", href: "/dashboard/delivery/new", icon: PlusSquare },
     { name: "OTP Parcel Unlock", shortName: "Unlock", href: "/dashboard/otp", icon: KeyRound },
     { name: "Notifications", shortName: "Alerts", href: "/dashboard/notifications", icon: Bell },
@@ -117,14 +117,19 @@ export default function DashboardLayout({
   ];
 
   return (
-    <div className="min-h-screen bg-surface-0 flex">
-      {/* ── Sidebar (Desktop) ── */}
-      <aside className="hidden md:flex md:w-64 flex-col bg-surface-1 border-r border-surface-3 shrink-0 sticky top-0 h-screen z-30">
-        <div className="p-6 border-b border-surface-3 flex items-center space-x-2">
-          <Bot className="h-7 w-7 text-brand-lime animate-robot-move" />
-          <span className="text-lg font-bold tracking-wider text-brand-white">
-            DSR <span className="text-brand-lime">Go</span>
-          </span>
+    <div className="h-screen bg-surface-0 text-brand-white flex overflow-hidden w-full">
+      {/* ── Sidebar (Desktop: Fixed Permanently on Left) ── */}
+      <aside className="hidden md:flex md:w-64 flex-col bg-surface-1 border-r border-surface-3 shrink-0 h-screen z-30">
+        <div className="p-6 border-b border-surface-3 flex items-center space-x-3">
+          <div className="relative w-9 h-9 rounded-xl bg-brand-lime/20 border border-brand-lime/30 flex items-center justify-center p-1">
+            <img src="/Robo.webp" alt="DSR Bot" className="w-8 h-8 object-contain" />
+          </div>
+          <div>
+            <span className="text-lg font-bold tracking-wider text-brand-white">
+              DSR <span className="text-brand-lime">Go</span>
+            </span>
+            <p className="text-[10px] font-bold text-brand-gray/50 uppercase tracking-wider">Autonomous Fleet</p>
+          </div>
         </div>
 
         <nav className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto">
@@ -148,32 +153,34 @@ export default function DashboardLayout({
         </nav>
 
         {/* User Card & Logout */}
-        <div className="p-4 border-t border-surface-3 bg-surface-2/30">
+        <div className="p-4 border-t border-surface-3 bg-surface-2/40">
           <div className="flex items-center space-x-3 mb-4">
             <div className="h-10 w-10 rounded-full bg-brand-lime/10 border border-brand-lime/20 flex items-center justify-center text-brand-lime font-bold">
               {user?.full_name?.charAt(0).toUpperCase() || "U"}
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-caption font-bold text-brand-white truncate">{user?.full_name}</p>
-              <p className="text-micro text-brand-gray/40 capitalize">{user?.role}</p>
+              <p className="text-micro text-brand-gray/50 capitalize">{user?.role}</p>
             </div>
           </div>
           <button
             onClick={handleLogout}
-            className="w-full flex items-center space-x-2 px-4 py-2.5 rounded-lg border border-surface-4 text-brand-gray/60 hover:text-status-error hover:bg-status-error/10 hover:border-status-error/20 transition-colors text-caption font-bold"
+            className="w-full flex items-center space-x-2 px-4 py-2.5 rounded-lg border border-surface-4 text-brand-gray/60 hover:text-red-400 hover:bg-red-500/10 transition-colors text-caption font-bold"
           >
             <LogOut className="h-4.5 w-4.5" />
-            <span>{"Sign Out"}</span>
+            <span>Sign Out</span>
           </button>
         </div>
       </aside>
 
-      {/* ── Main Content Area ── */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-x-hidden">
+      {/* ── Main Content Area (Independently Scrollable) ── */}
+      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
         {/* Header */}
         <header className="h-16 bg-surface-1 border-b border-surface-3 flex items-center justify-between px-4 sm:px-6 shrink-0 z-20">
           <div className="flex items-center space-x-3">
-            <Bot className="h-6 w-6 text-brand-lime md:hidden" />
+            <div className="relative w-8 h-8 rounded-lg bg-brand-lime/20 flex items-center justify-center md:hidden p-0.5 border border-brand-lime/30">
+              <img src="/Robo.webp" alt="DSR Bot" className="w-7 h-7 object-contain" />
+            </div>
             <h2 className="text-body sm:text-title font-bold text-brand-white tracking-tight truncate max-w-[180px] sm:max-w-none">
               {navItems.find((item) => item.href === pathname)?.name || "Dashboard"}
             </h2>
@@ -189,11 +196,11 @@ export default function DashboardLayout({
               className="hidden sm:flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-brand-lime text-brand-black text-caption font-bold hover:shadow-glow-lime transition-all"
             >
               <PlusSquare className="h-4 w-4" />
-              <span>{"New Delivery"}</span>
+              <span>New Delivery</span>
             </Link>
 
             {/* Notification Badge */}
-            <Link href="/dashboard/notifications" className="relative p-2 rounded-lg bg-surface-2 hover:bg-surface-3 transition-colors text-brand-gray hover:text-brand-lime" aria-label="Notifications">
+            <Link href="/dashboard/notifications" className="relative p-2 rounded-lg bg-surface-2 hover:bg-surface-3 transition-colors text-brand-white hover:text-brand-lime" aria-label="Notifications">
               <Bell className="h-5 w-5" />
               {hasUnread && (
                 <span className="absolute top-1 right-1 h-2.5 w-2.5 bg-brand-lime rounded-full ring-2 ring-surface-1" />
@@ -202,14 +209,14 @@ export default function DashboardLayout({
           </div>
         </header>
 
-        {/* Inner Content */}
+        {/* Inner Content (Scrolls independently) */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 bg-surface-0 bg-grid pb-28 md:pb-8">
           {children}
         </main>
       </div>
 
-      {/* ── Mobile Bottom Fixed Navigation Bar (Phone View) ── */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-surface-1/95 backdrop-blur-xl border-t border-surface-3 px-2 py-1.5 flex items-center justify-around shadow-2xl">
+      {/* ── Mobile Bottom Navigation Bar (Phone View) ── */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#111111]/95 backdrop-blur-xl border-t border-[#222222] px-2 py-1.5 flex items-center justify-around shadow-2xl">
         {mobileNavItems.map((item) => {
           const isActive = pathname === item.href;
           const Icon = item.icon;
@@ -219,21 +226,21 @@ export default function DashboardLayout({
               href={item.href}
               className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all relative ${
                 isActive
-                  ? "text-brand-lime font-extrabold scale-105"
-                  : "text-brand-gray/60 hover:text-brand-white"
+                  ? "text-[#84E000] font-extrabold scale-105"
+                  : "text-gray-400 hover:text-white"
               }`}
             >
               <div className="relative">
-                <Icon className={`h-5 w-5 ${isActive ? "text-brand-lime" : ""}`} />
+                <Icon className={`h-5 w-5 ${isActive ? "text-[#84E000]" : ""}`} />
                 {item.href === "/dashboard/notifications" && hasUnread && (
-                  <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-brand-lime ring-2 ring-surface-1" />
+                  <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-[#84E000] ring-2 ring-[#111111]" />
                 )}
               </div>
-              <span className="text-[10px] font-semibold mt-0.5 tracking-tight truncate max-w-[60px]">
+              <span className="text-[10px] font-semibold mt-0.5 tracking-tight truncate max-w-[64px]">
                 {item.shortName}
               </span>
               {isActive && (
-                <span className="h-1 w-4 rounded-full bg-brand-lime mt-0.5 shadow-glow-lime" />
+                <span className="h-1 w-4 rounded-full bg-[#84E000] mt-0.5 shadow-glow-lime" />
               )}
             </Link>
           );

@@ -2,16 +2,26 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/store/authStore";
-import { Bot, RefreshCw, Battery, Compass, WifiOff, Power, PowerOff } from "lucide-react";
+import { Bot, RefreshCw, Battery, Compass, WifiOff, Power, MapPin, Zap } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import RoleGuard from "@/components/RoleGuard";
+import dynamic from "next/dynamic";
+
+const CampusMap = dynamic(() => import("@/components/CampusMap"), {
+  ssr: false,
+  loading: () => (
+    <div className="glassmorphism rounded-2xl border border-surface-4 p-4 h-[340px] flex items-center justify-center">
+      <span className="text-micro text-brand-gray/40">Loading campus fleet map...</span>
+    </div>
+  ),
+});
 
 function ErrorPanel({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
-    <div className="flex flex-col items-center justify-center py-24 space-y-4 glassmorphism rounded-2xl border border-status-error/20 bg-status-error/5">
-      <div className="p-4 rounded-full bg-status-error/10 border border-status-error/20">
-        <WifiOff className="h-8 w-8 text-status-error" />
+    <div className="flex flex-col items-center justify-center py-16 space-y-4 glassmorphism rounded-3xl border border-status-error/20 bg-status-error/5 p-6">
+      <div className="p-4 rounded-full bg-status-error/10 text-status-error">
+        <WifiOff className="h-8 w-8" />
       </div>
       <div className="text-center space-y-1">
         <p className="text-body font-bold text-brand-white">Backend Unreachable</p>
@@ -19,7 +29,7 @@ function ErrorPanel({ message, onRetry }: { message: string; onRetry: () => void
       </div>
       <button
         onClick={onRetry}
-        className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-status-error/10 border border-status-error/20 text-status-error font-bold text-body hover:bg-status-error/20 transition-all"
+        className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-status-error/10 border border-status-error/20 text-status-error font-bold text-body hover:bg-status-error/20 transition-all shadow-xs"
       >
         <RefreshCw className="h-4 w-4" />
         Retry Connection
@@ -71,17 +81,17 @@ function FleetContent() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "idle":
-        return "text-brand-lime bg-brand-lime/10 border-brand-lime/20";
+        return "text-brand-black bg-brand-lime";
       case "en_route":
-        return "text-brand-yellow bg-brand-yellow/10 border-brand-yellow/20";
+        return "text-brand-black bg-brand-yellow";
       case "charging":
-        return "text-status-info bg-status-info/10 border-status-info/20";
+        return "text-white bg-blue-600";
       case "maintenance":
-        return "text-status-error bg-status-error/10 border-status-error/20";
+        return "text-white bg-red-600";
       case "offline":
-        return "text-brand-gray/50 bg-surface-2 border-surface-3";
+        return "text-brand-gray/60 bg-surface-3";
       default:
-        return "text-brand-gray/40 bg-surface-2 border-surface-3";
+        return "text-brand-gray/60 bg-surface-3";
     }
   };
 
@@ -89,13 +99,13 @@ function FleetContent() {
     ["en_route", "delivering", "returning"].includes(status);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 max-w-5xl mx-auto pb-16">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0">
         <div>
-          <h1 className="text-display font-extrabold tracking-tight">Fleet Management</h1>
-          <p className="text-body text-brand-gray/50">
-            Monitor telemetry, battery logs, and operations for all active delivery units.
+          <h1 className="text-display font-extrabold tracking-tight text-brand-white">Fleet Management</h1>
+          <p className="text-body text-brand-gray/60 font-medium">
+            Monitor telemetry, battery logs, and real-time campus locations for all active delivery units.
           </p>
         </div>
         <button
@@ -103,27 +113,58 @@ function FleetContent() {
             refetch();
             toast.success("Fleet status updated");
           }}
-          className="p-2.5 rounded-lg bg-surface-2 hover:bg-surface-3 border border-surface-4 text-brand-gray hover:text-brand-lime transition-all"
+          className="p-3 rounded-xl bg-surface-2 border border-surface-3 hover:bg-brand-lime hover:text-brand-black text-brand-white shadow-xs transition-all flex items-center space-x-2 text-caption font-bold"
         >
-          <RefreshCw className="h-5 w-5" />
+          <RefreshCw className="h-4 w-4" />
+          <span>Sync Fleet</span>
         </button>
       </div>
 
-      {/* Fleet Grid */}
+      {/* ── ADMIN/OPERATOR LIVE CAMPUS RADAR MAP ────────────────────── */}
+      <div className="glassmorphism rounded-3xl border border-surface-4 p-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-title font-bold text-brand-white flex items-center space-x-2">
+              <MapPin className="h-5 w-5 text-brand-lime" />
+              <span>Campus Fleet Live Radar Map</span>
+            </h3>
+            <p className="text-micro text-brand-gray/60 mt-0.5">Real-time GPS coordinates and route telemetry across campus buildings</p>
+          </div>
+          <span className="text-micro font-bold text-brand-lime px-2.5 py-1 rounded bg-brand-lime/10 border border-brand-lime/20">
+            {robots.length} Units Active
+          </span>
+        </div>
+
+        <div className="h-[360px] rounded-2xl overflow-hidden border border-surface-3 relative">
+          <CampusMap
+            robotsList={robots.map((r: any) => ({
+              id: r.id,
+              name: r.name,
+              lat: r.location_lat || 23.0906,
+              lng: r.location_lng || 72.5344,
+              status: r.status,
+              heading: r.heading || 45,
+            }))}
+            followRobot={false}
+          />
+        </div>
+      </div>
+
+      {/* Fleet Cards Grid */}
       {isLoading ? (
         <div className="flex justify-center items-center py-24">
           <div className="h-8 w-8 rounded-full border-2 border-surface-3 border-t-brand-lime animate-spin" />
         </div>
       ) : isError ? (
         <ErrorPanel
-          message="Could not load robot fleet from the API. Ensure the FastAPI backend is running on port 8000."
+          message="Could not load robot fleet from the API. Ensure FastAPI backend is running on port 8000."
           onRetry={() => { refetch(); toast.info("Retrying fleet fetch..."); }}
         />
       ) : robots.length === 0 ? (
-        <div className="text-center py-16 glassmorphism rounded-2xl border border-surface-4 space-y-4">
-          <Bot className="h-12 w-12 text-brand-gray/20 mx-auto" />
+        <div className="text-center py-16 glassmorphism rounded-3xl border border-surface-4 shadow-sm space-y-4">
+          <Bot className="h-12 w-12 text-brand-gray/40 mx-auto" />
           <p className="text-body font-bold text-brand-white">No Robots Configured</p>
-          <p className="text-caption text-brand-gray/50 max-w-sm mx-auto">
+          <p className="text-caption text-brand-gray/60 max-w-sm mx-auto">
             Please seed or register autonomous robot vehicles in the database to manage the fleet.
           </p>
         </div>
@@ -132,188 +173,76 @@ function FleetContent() {
           {robots.map((robot: any) => {
             const isOffline = robot.status === "offline";
             const isBusy = isActivelyBusy(robot.status);
-            const isToggling = toggleMutation.isPending && toggleMutation.variables === robot.id;
 
             return (
               <div
                 key={robot.id}
-                className={`glassmorphism rounded-2xl border p-6 flex flex-col justify-between transition-all ${
-                  isOffline
-                    ? "border-surface-3 opacity-70"
-                    : "border-surface-4 hover:border-brand-lime/20"
+                className={`glassmorphism rounded-3xl border border-surface-4 p-6 flex flex-col justify-between space-y-6 ${
+                  isOffline ? "opacity-75" : ""
                 }`}
               >
                 <div className="space-y-4">
                   {/* Robot Info & Status */}
                   <div className="flex justify-between items-start">
                     <div className="flex items-center space-x-3">
-                      <div className={`p-2.5 rounded-xl border ${isOffline ? "bg-surface-2 border-surface-3 text-brand-gray/30" : "bg-surface-1 border-surface-3 text-brand-lime"}`}>
-                        <Bot className="h-6 w-6" />
+                      {/* Robo.webp Avatar */}
+                      <div className="w-12 h-12 rounded-2xl bg-brand-yellow flex items-center justify-center p-1 shadow-xs shrink-0">
+                        <img src="/Robo.webp" alt="Robo" className="w-10 h-10 object-contain" />
                       </div>
                       <div>
-                        <h4 className="text-body font-extrabold text-brand-white">{robot.name}</h4>
-                        <p className="text-micro text-brand-gray/40">ID: DSR-0{robot.id}</p>
+                        <h4 className="text-body font-bold text-brand-white">{robot.name}</h4>
+                        <p className="text-micro font-medium text-brand-gray/60">ID: DSR-0{robot.id}</p>
                       </div>
                     </div>
-                    <span className={`text-micro font-bold px-2 py-0.5 rounded border capitalize ${getStatusColor(robot.status)}`}>
+                    <span className={`text-micro font-extrabold px-2.5 py-1 rounded-full uppercase ${getStatusColor(robot.status)}`}>
                       {robot.status.replace("_", " ")}
                     </span>
                   </div>
 
-                  {/* Battery & Hardware Status */}
+                  {/* Battery Status */}
                   <div className="space-y-2">
-                    <div className="flex justify-between items-center text-caption">
-                      <span className="text-brand-gray/50 flex items-center space-x-1">
-                        <Battery className="h-4 w-4" />
+                    <div className="flex justify-between items-center text-caption font-bold text-brand-gray/60">
+                      <span className="flex items-center space-x-1">
+                        <Battery className="h-4 w-4 text-brand-lime" />
                         <span>Battery Charge</span>
                       </span>
-                      <span className={`font-semibold ${
-                        robot.battery_level < 20
-                          ? "text-status-error animate-pulse"
-                          : robot.battery_level < 50
-                          ? "text-brand-yellow"
-                          : "text-brand-lime"
-                      }`}>
-                        {robot.battery_level}%
-                      </span>
+                      <span className="text-brand-white font-extrabold">{robot.battery_level}%</span>
                     </div>
                     <div className="w-full bg-surface-3 h-2 rounded-full overflow-hidden">
                       <div
-                        className={`h-full rounded-full ${
-                          robot.battery_level < 20
-                            ? "bg-status-error"
-                            : robot.battery_level < 50
-                            ? "bg-brand-yellow"
-                            : "bg-brand-lime"
-                        }`}
+                        className="h-full rounded-full bg-brand-lime"
                         style={{ width: `${robot.battery_level}%` }}
                       />
                     </div>
                   </div>
 
                   {/* Telemetry snippet */}
-                  <div className="grid grid-cols-2 gap-4 pt-2 text-micro text-brand-gray/50 border-t border-surface-4/40">
-                    <div className="flex items-center space-x-1">
-                      <Compass className="h-3.5 w-3.5 text-brand-gray/30" />
-                      <span>Lat: {robot.location_lat?.toFixed(4) || "0.0000"}</span>
+                  <div className="grid grid-cols-2 gap-2 pt-2 text-micro font-medium text-brand-gray/60 border-t border-surface-3">
+                    <div>
+                      <span className="block text-brand-gray/40">Model</span>
+                      <span className="font-bold text-brand-white">{robot.model_type || "Express Runner"}</span>
                     </div>
-                    <div className="flex items-center space-x-1">
-                      <Compass className="h-3.5 w-3.5 text-brand-gray/30" />
-                      <span>Lng: {robot.location_lng?.toFixed(4) || "0.0000"}</span>
+                    <div>
+                      <span className="block text-brand-gray/40">Payload</span>
+                      <span className="font-bold text-brand-white">{robot.payload_capacity_kg || 15} kg</span>
                     </div>
                   </div>
                 </div>
 
-                {/* Action buttons — Admin Override Controls */}
-                <div className="space-y-3 pt-6">
-                  {/* Active / Idle Toggle — Primary Admin Control */}
+                {/* Actions */}
+                <div className="pt-2 border-t border-surface-3 flex items-center justify-between">
                   <button
                     onClick={() => toggleMutation.mutate(robot.id)}
-                    disabled={isBusy || isToggling}
-                    title={
-                      isBusy
-                        ? "Cannot toggle while robot is actively delivering"
-                        : isOffline
-                        ? "Set robot to ACTIVE (Idle)"
-                        : "Set robot to INACTIVE (Offline)"
-                    }
-                    className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-lg font-bold text-caption transition-all border ${
-                      isBusy || isToggling
-                        ? "opacity-40 cursor-not-allowed border-surface-4 text-brand-gray/40 bg-surface-2"
-                        : isOffline
-                        ? "border-brand-lime/40 bg-brand-lime/10 text-brand-lime hover:bg-brand-lime hover:text-brand-black"
-                        : "border-status-error/30 bg-status-error/10 text-status-error hover:bg-status-error/20"
+                    disabled={isBusy || toggleMutation.isPending}
+                    className={`w-full py-2.5 px-3 rounded-xl text-caption font-bold flex items-center justify-center space-x-2 transition-all ${
+                      isOffline
+                        ? "bg-brand-lime text-brand-black hover:shadow-glow-lime"
+                        : "bg-surface-2 border border-surface-3 text-brand-gray/60 hover:text-red-400 hover:bg-red-500/10"
                     }`}
                   >
-                    {isToggling ? (
-                      <div className="h-4 w-4 rounded-full border-2 border-current border-t-transparent animate-spin" />
-                    ) : isOffline ? (
-                      <Power className="h-4 w-4" />
-                    ) : (
-                      <PowerOff className="h-4 w-4" />
-                    )}
-                    <span>{isOffline ? "Set Active" : "Set Inactive"}</span>
+                    <Power className="h-4 w-4" />
+                    <span>{isOffline ? "Activate Unit" : "Deactivate Unit"}</span>
                   </button>
-
-                  {/* Force Compartment Controls */}
-                  <div className="flex items-center space-x-2">
-                    <button
-                      onClick={async () => {
-                        try {
-                          const res = await fetch(`/api/v1/robots/${robot.id}/compartment`, {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-                            body: JSON.stringify({ action: "open" }),
-                          });
-                          if (!res.ok) throw new Error("Compartment control failed");
-                          toast.success(`Robot ${robot.name}: Compartment Force Unlocked 🔓`);
-                        } catch (err: any) {
-                          toast.error(err.message);
-                        }
-                      }}
-                      className="flex-1 py-1.5 px-2 rounded-lg bg-surface-1 hover:bg-brand-lime/10 border border-surface-4 hover:border-brand-lime/30 text-micro font-bold text-brand-gray/80 hover:text-brand-lime transition-all flex items-center justify-center space-x-1"
-                      title="Admin Force Open Compartment Door"
-                    >
-                      <span>{"Force Unlock 🔓"}</span>
-                    </button>
-
-                    <button
-                      onClick={async () => {
-                        try {
-                          const res = await fetch(`/api/v1/robots/${robot.id}/compartment`, {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-                            body: JSON.stringify({ action: "close" }),
-                          });
-                          if (!res.ok) throw new Error("Compartment control failed");
-                          toast.success(`Robot ${robot.name}: Compartment Door Locked 🔒`);
-                        } catch (err: any) {
-                          toast.error(err.message);
-                        }
-                      }}
-                      className="flex-1 py-1.5 px-2 rounded-lg bg-surface-1 hover:bg-surface-2 border border-surface-4 text-micro font-bold text-brand-gray/80 hover:text-brand-white transition-all flex items-center justify-center space-x-1"
-                      title="Admin Force Lock Compartment Door"
-                    >
-                      <span>{"Force Lock 🔒"}</span>
-                    </button>
-                  </div>
-
-                  <div className="flex items-center space-x-3">
-                    <Link
-                      href={`/dashboard/robots/${robot.id}`}
-                      className="flex-1 text-center py-2 rounded-lg border border-surface-4 hover:border-brand-lime/30 text-caption font-bold text-brand-white hover:text-brand-lime transition-all"
-                    >
-                      {"Diagnostics"}
-                    </Link>
-
-                    <button
-                      disabled={isOffline}
-                      onClick={async () => {
-                        const targetBlock = prompt("Enter target block to dispatch robot (e.g., A Block, B Block, C Block, D Block, E Block):", "B Block");
-                        if (!targetBlock) return;
-                        try {
-                          const res = await fetch(`/api/v1/robots/${robot.id}/dispatch`, {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-                            body: JSON.stringify({ destination_block: targetBlock }),
-                          });
-                          if (!res.ok) throw new Error("Dispatch failed");
-                          toast.success(`Dispatched ${robot.name} to ${targetBlock}`);
-                          refetch();
-                        } catch (err: any) {
-                          toast.error(err.message);
-                        }
-                      }}
-                      className={`px-3 py-2 rounded-lg text-caption font-bold transition-all ${
-                        isOffline
-                          ? "opacity-40 cursor-not-allowed bg-surface-2 border-surface-3 text-brand-gray/40"
-                          : "bg-brand-lime/10 border border-brand-lime/30 text-brand-lime hover:bg-brand-lime hover:text-brand-black"
-                      }`}
-                      title={isOffline ? "Robot is offline" : "Dispatch Robot to Campus Block"}
-                    >
-                      {"Dispatch 🚀"}
-                    </button>
-                  </div>
                 </div>
               </div>
             );
@@ -324,7 +253,7 @@ function FleetContent() {
   );
 }
 
-export default function RobotsFleetPage() {
+export default function RobotsPage() {
   return (
     <RoleGuard roles={["admin", "operator"]}>
       <FleetContent />

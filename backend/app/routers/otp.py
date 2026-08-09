@@ -100,8 +100,19 @@ async def verify_delivery_otp(
     if not delivery:
         raise HTTPException(status_code=404, detail="Delivery not found")
 
-    if delivery.status not in (DeliveryStatus.ARRIVED, DeliveryStatus.WAITING_OTP):
-        raise HTTPException(status_code=409, detail="Delivery is not in arrived/waiting OTP state")
+    # Allow verifying OTP for active delivery states
+    active_statuses = (
+        DeliveryStatus.PENDING,
+        DeliveryStatus.PICKUP_IN_PROGRESS,
+        DeliveryStatus.EN_ROUTE,
+        DeliveryStatus.ARRIVED,
+        DeliveryStatus.WAITING_OTP,
+    )
+    if delivery.status not in active_statuses:
+        raise HTTPException(
+            status_code=409, 
+            detail=f"Delivery status '{delivery.status.value}' does not allow OTP unlock. Must be an active delivery."
+        )
 
     # Check expiry
     otp_expires = delivery.otp_expires_at

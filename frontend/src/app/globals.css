@@ -7,29 +7,8 @@
     background-color: var(--surface-0);
     color: var(--brand-white);
     -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
   }
-}
-
-/* ── Custom Utilities ────────────────────────────── */
-
-.bg-grid-glow {
-  background-image: 
-    radial-gradient(circle at 50% 50%, rgba(198, 255, 0, 0.05), transparent 80%),
-    linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
-  background-size: 100% 100%, 40px 40px, 40px 40px;
-}
-
-.glassmorphism {
-  background-color: var(--surface-1);
-  backdrop-filter: blur(12px);
-  border: 1px solid var(--surface-3);
-}
-
-.glassmorphism-premium {
-  background-color: var(--surface-1);
-  backdrop-filter: blur(16px);
-  border: 1px solid var(--surface-4);
 }
 
 /* ── Custom Scrollbar ────────────────────────────── */
@@ -48,31 +27,13 @@
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #C6FF00;
+  background: #84E000;
 }
 
-/* ── Pulse Rings ─────────────────────────────────── */
-@keyframes ring-pulse {
-  0% {
-    transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(198, 255, 0, 0.7);
-  }
-  70% {
-    transform: scale(1);
-    box-shadow: 0 0 0 10px rgba(198, 255, 0, 0);
-  }
-  100% {
-    transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(198, 255, 0, 0);
-  }
-}
-
-.ring-indicator {
-  animation: ring-pulse 2s infinite;
-}
-
-/* ── Root Theme Variables (Default Dark) ────────────────── */
-:root {
+/* ── Root Theme Variables (Default Dark Base) ────────────────── */
+:root,
+.dark,
+[data-theme="dark"] {
   --surface-0: #0A0A0A;
   --surface-1: #111111;
   --surface-2: #1A1A1A;
@@ -86,7 +47,10 @@
 }
 
 /* ── Ather Light Theme (Inspired by Ather Energy App UI) ────────── */
-[data-theme="ather"] {
+[data-theme="ather"],
+[data-theme="light"],
+.light,
+.ather {
   --surface-0: #EBF6F0;
   --surface-1: #FFFFFF;
   --surface-2: #F4FAF6;
@@ -99,14 +63,17 @@
   --brand-graphite: #EBF6F0;
 }
 
-[data-theme="ather"],
-[data-theme="ather"] body,
-[data-theme="ather"] main {
+[data-theme="ather"], [data-theme="light"], .light, .ather,
+[data-theme="ather"] body, [data-theme="light"] body, .light body, .ather body,
+[data-theme="ather"] main, [data-theme="light"] main, .light main, .ather main {
   background-color: var(--surface-0) !important;
   color: var(--brand-white) !important;
 }
 
-[data-theme="ather"] .glassmorphism {
+[data-theme="ather"] .glassmorphism,
+[data-theme="light"] .glassmorphism,
+.light .glassmorphism,
+.ather .glassmorphism {
   background-color: #FFFFFF !important;
   border-color: #D4E8DC !important;
   color: #0F172A !important;
@@ -114,39 +81,125 @@
 }
 
 [data-theme="ather"] input,
+[data-theme="light"] input,
+.light input,
+.ather input,
 [data-theme="ather"] select,
-[data-theme="ather"] textarea {
+[data-theme="light"] select,
+.light select,
+.ather select,
+[data-theme="ather"] textarea,
+[data-theme="light"] textarea,
+.light textarea,
+.ather textarea {
   background-color: #FFFFFF !important;
   color: #0F172A !important;
   border-color: #CBD5E1 !important;
 }
 
 [data-theme="ather"] input::placeholder,
-[data-theme="ather"] textarea::placeholder {
+[data-theme="light"] input::placeholder,
+.light input::placeholder,
+.ather input::placeholder,
+[data-theme="ather"] textarea::placeholder,
+[data-theme="light"] textarea::placeholder,
+.light textarea::placeholder,
+.ather textarea::placeholder {
   color: #64748B !important;
 }
 
-[data-theme="ather"] .bg-brand-lime {
+[data-theme="ather"] .bg-brand-lime,
+[data-theme="light"] .bg-brand-lime,
+.light .bg-brand-lime,
+.ather .bg-brand-lime {
   background-color: #84E000 !important;
   color: #0F172A !important;
 }
 
-[data-theme="ather"] .text-brand-lime {
+[data-theme="ather"] .text-brand-lime,
+[data-theme="light"] .text-brand-lime,
+.light .text-brand-lime,
+.ather .text-brand-lime {
   color: #4B9600 !important;
 }
 
-[data-theme="ather"] .border-brand-lime {
+[data-theme="ather"] .border-brand-lime,
+[data-theme="light"] .border-brand-lime,
+.light .border-brand-lime,
+.ather .border-brand-lime {
   border-color: #84E000 !important;
 }
 
-[data-theme="ather"] .bg-brand-lime\/10 {
+[data-theme="ather"] .bg-brand-lime\/10,
+[data-theme="light"] .bg-brand-lime\/10,
+.light .bg-brand-lime\/10,
+.ather .bg-brand-lime\/10 {
   background-color: rgba(132, 224, 0, 0.18) !important;
 }
 
-[data-theme="ather"] .bg-brand-lime\/20 {
+[data-theme="ather"] .bg-brand-lime\/20,
+[data-theme="light"] .bg-brand-lime\/20,
+.light .bg-brand-lime\/20,
+.ather .bg-brand-lime\/20 {
   background-color: rgba(132, 224, 0, 0.3) !important;
 }
 
-[data-theme="ather"] .border-brand-lime\/20 {
+[data-theme="ather"] .border-brand-lime\/20,
+[data-theme="light"] .border-brand-lime\/20,
+.light .border-brand-lime\/20,
+.ather .border-brand-lime\/20 {
   border-color: rgba(132, 224, 0, 0.4) !important;
+}
+
+[data-theme="ather"] ::-webkit-scrollbar-track,
+[data-theme="light"] ::-webkit-scrollbar-track,
+.light ::-webkit-scrollbar-track,
+.ather ::-webkit-scrollbar-track {
+  background: #EFEFED;
+}
+
+[data-theme="ather"] ::-webkit-scrollbar-thumb,
+[data-theme="light"] ::-webkit-scrollbar-thumb,
+.light ::-webkit-scrollbar-thumb,
+.ather ::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 9999px;
+}
+
+[data-theme="ather"] ::-webkit-scrollbar-thumb:hover,
+[data-theme="light"] ::-webkit-scrollbar-thumb:hover,
+.light ::-webkit-scrollbar-thumb:hover,
+.ather ::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+}
+
+/* ── Ather Components Utility Classes ────────────────────── */
+.ather-card {
+  background-color: #FFFFFF;
+  border-radius: 1.5rem; /* ~24px */
+  border: none;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.03), 0 1px 3px rgba(15, 23, 42, 0.02);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.ather-card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08);
+}
+
+.ather-banner-yellow {
+  background-color: #FFE234;
+  color: #0F172A;
+  border-radius: 1.5rem;
+}
+
+.ather-dark-card {
+  background-color: #141414;
+  color: #FFFFFF;
+  border-radius: 1.5rem;
+}
+
+.ather-two-tone-lime {
+  background: linear-gradient(to bottom, #9CFF7A 0%, #9CFF7A 65%, #141414 65%, #141414 100%);
+  border-radius: 1.5rem;
 }

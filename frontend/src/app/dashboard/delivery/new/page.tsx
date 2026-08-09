@@ -5,8 +5,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useQuery } from "@tanstack/react-query";
 import { useAuthStore } from "@/store/authStore";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Bot,
   MapPin,
@@ -21,6 +22,13 @@ import {
   Battery,
   Layers,
   ArrowRight,
+  ArrowLeft,
+  CheckCircle2,
+  Sparkles,
+  ShieldCheck,
+  Building2,
+  Weight,
+  Clock
 } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -44,7 +52,10 @@ type DeliveryFormValues = z.infer<typeof deliverySchema>;
 export default function NewDeliveryPage() {
   const { user, token } = useAuthStore();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const preselectedDest = searchParams.get("dest") || "B Block";
 
+  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [tripMode, setTripMode] = useState<"single" | "multi">("single");
   const [multiStops, setMultiStops] = useState<string[]>(["B Block", "C Block"]);
@@ -67,6 +78,18 @@ export default function NewDeliveryPage() {
     retry: 1,
   });
 
+  // Fallback demo robots if database fetch is loading or empty
+  const defaultFallbackRobots = [
+    { id: 1, name: "DSR-Alpha 01", serial_number: "DSR-SN-001", status: "idle", battery_level: 95, payload_capacity_kg: 15, model_type: "Heavy Payload Bot" },
+    { id: 2, name: "DSR-Beta 02", serial_number: "DSR-SN-002", status: "idle", battery_level: 88, payload_capacity_kg: 10, model_type: "Express Runner" },
+    { id: 3, name: "DSR-Gamma 03", serial_number: "DSR-SN-003", status: "idle", battery_level: 75, payload_capacity_kg: 12, model_type: "Standard Bot" },
+  ];
+
+  const fetchedAvailable = robots.filter((r: any) => r.status === "idle" || r.status === "charging" || r.status === "standby");
+  const availableRobots = fetchedAvailable.length > 0 
+    ? fetchedAvailable 
+    : (robots.length > 0 ? robots : defaultFallbackRobots);
+
   const {
     register,
     handleSubmit,
@@ -77,7 +100,7 @@ export default function NewDeliveryPage() {
     resolver: zodResolver(deliverySchema),
     defaultValues: {
       origin_block: "A Block",
-      destination_block: "B Block",
+      destination_block: (BLOCKS.includes(preselectedDest) ? preselectedDest : "B Block") as any,
       priority: "normal",
       is_preloaded: false,
       receiver_name: user?.full_name || "",
@@ -87,7 +110,15 @@ export default function NewDeliveryPage() {
 
   const selectedRobotId = watch("robot_id");
   const originBlock = watch("origin_block");
-  const singleDestBlock = watch("destination_block");
+  const destinationBlock = watch("destination_block");
+  const selectedRobot = robots.find((r: any) => r.id === selectedRobotId);
+
+  // Auto-fill selected robot if none selected
+  useEffect(() => {
+    if (!selectedRobotId && availableRobots.length > 0) {
+      setValue("robot_id", availableRobots[0].id, { shouldValidate: true });
+    }
+  }, [availableRobots, selectedRobotId, setValue]);
 
   // Auto-fill receiver fields if booking for myself
   useEffect(() => {
@@ -115,6 +146,24 @@ export default function NewDeliveryPage() {
   const handleRemoveStop = (index: number) => {
     if (multiStops.length <= 1) return;
     setMultiStops(multiStops.filter((_, i) => i !== index));
+  };
+
+  const nextStep = () => {
+    if (step === 2) {
+      if (tripMode === "single" && originBlock === destinationBlock) {
+        toast.error("Origin and Destination blocks cannot be identical!");
+        return;
+      }
+    }
+    if (step === 3 && !selectedRobotId) {
+      toast.error("Please select an available robot to proceed.");
+      return;
+    }
+    setStep((prev) => Math.min(prev + 1, 4) as any);
+  };
+
+  const prevStep = () => {
+    setStep((prev) => Math.max(prev - 1, 1) as any);
   };
 
   const onSubmit = async (values: DeliveryFormValues) => {
@@ -169,269 +218,416 @@ export default function NewDeliveryPage() {
   };
 
   return (
-    <div className="space-y-8">
-      {/* Title */}
-      <div>
-        <h1 className="text-display font-extrabold tracking-tight">Request Delivery</h1>
-        <p className="text-body text-brand-gray/50">
-          Choose trip mode, vehicle, routing stops, and package info to dispatch an autonomous unit.
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-        {/* Main Form (2 cols on desktop) */}
-        <form onSubmit={handleSubmit(onSubmit)} className="lg:col-span-2 space-y-8">
-          
-          {/* B1: Trip Mode Selector (Single Trip / Multi-Trip) */}
-          <div className="glassmorphism rounded-3xl p-6 border border-surface-4 space-y-4">
-            <label className="text-caption font-extrabold text-brand-white uppercase tracking-wider block">
-              Trip Mode
-            </label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Single Trip */}
-              <div
-                onClick={() => setTripMode("single")}
-                className={`cursor-pointer rounded-2xl p-5 border-2 transition-all flex flex-col justify-between ${
-                  tripMode === "single"
-                    ? "bg-brand-lime/10 border-brand-lime shadow-glow-lime/20"
-                    : "bg-surface-1 border-surface-3 hover:border-surface-4"
-                }`}
+    <div className="max-w-3xl mx-auto space-y-6 pb-16">
+      
+      {/* ── Wizard Progress Bar Header ───────────────────────────────── */}
+      <div className="ather-card p-5 space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            {step > 1 ? (
+              <button
+                type="button"
+                onClick={prevStep}
+                className="p-2 rounded-2xl bg-[#F6F6F4] text-[#0F172A] hover:bg-[#FFE234] transition-colors flex items-center space-x-1 text-caption font-bold"
               >
-                <div className="flex items-center space-x-3 mb-2">
-                  <div className="p-2.5 rounded-xl bg-brand-lime/20 text-brand-lime">
-                    <Navigation className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-brand-white text-body">Single Trip</h4>
-                    <span className="text-micro text-brand-gray/60">One Origin ➔ One Destination</span>
-                  </div>
-                </div>
-                <p className="text-caption text-brand-gray/70 mt-2">
-                  Robot travels directly from the pickup block to a single recipient building.
-                </p>
+                <ArrowLeft className="h-4 w-4" />
+                <span>Back</span>
+              </button>
+            ) : (
+              <div className="p-2 rounded-2xl bg-[#FFE234] text-[#0F172A]">
+                <Navigation className="h-5 w-5" />
               </div>
+            )}
 
-              {/* Multi-Trip */}
-              <div
-                onClick={() => setTripMode("multi")}
-                className={`cursor-pointer rounded-2xl p-5 border-2 transition-all flex flex-col justify-between ${
-                  tripMode === "multi"
-                    ? "bg-brand-lime/10 border-brand-lime shadow-glow-lime/20"
-                    : "bg-surface-1 border-surface-3 hover:border-surface-4"
-                }`}
-              >
-                <div className="flex items-center space-x-3 mb-2">
-                  <div className="p-2.5 rounded-xl bg-brand-cyan/20 text-brand-cyan">
-                    <Layers className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-brand-white text-body">Multi-Trip</h4>
-                    <span className="text-micro text-brand-cyan font-semibold">Multi-Stop Route Chain</span>
-                  </div>
-                </div>
-                <p className="text-caption text-brand-gray/70 mt-2">
-                  Robot visits a chain of 2+ campus stops sequentially in a single automated run.
-                </p>
-              </div>
+            <div>
+              <span className="text-micro font-bold uppercase tracking-wider text-[#64748B]">
+                Step {step} of 4
+              </span>
+              <h2 className="text-title font-black text-[#0F172A]">
+                {step === 1 && "Select Trip Mode"}
+                {step === 2 && "Configure Campus Routing"}
+                {step === 3 && "Select Robot Unit"}
+                {step === 4 && "Package & Recipient Details"}
+              </h2>
             </div>
           </div>
 
-          {/* B2: Routing Details */}
-          <div className="glassmorphism rounded-3xl p-6 border border-surface-4 space-y-6">
-            <h3 className="text-title font-bold flex items-center space-x-2">
-              <MapPin className="h-5 w-5 text-brand-lime" />
-              <span>Campus Routing</span>
-            </h3>
+          <span className="px-3.5 py-1 rounded-full bg-[#F6F6F4] text-[#0F172A] text-caption font-extrabold">
+            {step === 1 && "Mode"}
+            {step === 2 && "Routing"}
+            {step === 3 && "Fleet"}
+            {step === 4 && "Review & Dispatch"}
+          </span>
+        </div>
 
-            {tripMode === "single" ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-caption font-semibold text-brand-gray/70">Origin Block</label>
-                  <select
-                    {...register("origin_block")}
-                    className="w-full bg-surface-1 border border-surface-4 focus:border-brand-lime focus:outline-none rounded-xl py-3 px-4 text-body text-brand-white transition-colors"
-                  >
-                    {BLOCKS.map((b) => (
-                      <option key={b} value={b}>{b}</option>
-                    ))}
-                  </select>
-                </div>
+        {/* Step Progress Dots/Line */}
+        <div className="flex items-center space-x-2 pt-1">
+          {[1, 2, 3, 4].map((s) => (
+            <div
+              key={s}
+              className={`h-2 flex-1 rounded-full transition-all duration-300 ${
+                s <= step ? "bg-[#84E000]" : "bg-[#E4E4E0]"
+              }`}
+            />
+          ))}
+        </div>
+      </div>
 
-                <div className="space-y-2">
-                  <label className="text-caption font-semibold text-brand-gray/70">Destination Block</label>
-                  <select
-                    {...register("destination_block")}
-                    className="w-full bg-surface-1 border border-surface-4 focus:border-brand-lime focus:outline-none rounded-xl py-3 px-4 text-body text-brand-white transition-colors"
-                  >
-                    {BLOCKS.map((b) => (
-                      <option key={b} value={b}>{b}</option>
-                    ))}
-                  </select>
-                </div>
+      {/* ── Form Container ──────────────────────────────────────────── */}
+      <form onSubmit={handleSubmit(onSubmit)}>
+        <AnimatePresence mode="wait">
+
+          {/* ── STEP 1: TRIP MODE SELECTION ────────────────────────────── */}
+          {step === 1 && (
+            <motion.div
+              key="step1"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.25 }}
+              className="ather-card p-6 space-y-6"
+            >
+              <div>
+                <h3 className="text-title font-extrabold text-[#0F172A]">Choose Delivery Trip Mode</h3>
+                <p className="text-caption text-[#64748B]">
+                  Select whether the robot delivers directly to one destination or executes a multi-stop campus chain.
+                </p>
               </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-caption font-semibold text-brand-gray/70">Origin Block</label>
-                  <select
-                    {...register("origin_block")}
-                    className="w-full bg-surface-1 border border-surface-4 focus:border-brand-lime focus:outline-none rounded-xl py-3 px-4 text-body text-brand-white transition-colors"
-                  >
-                    {BLOCKS.map((b) => (
-                      <option key={b} value={b}>{b}</option>
-                    ))}
-                  </select>
-                </div>
 
-                <div className="space-y-3 pt-2">
-                  <label className="text-caption font-semibold text-brand-gray/70 block">
-                    Stop Sequence Chain
-                  </label>
-                  {multiStops.map((stop, idx) => (
-                    <div key={idx} className="flex items-center space-x-3">
-                      <span className="h-8 w-8 rounded-full bg-surface-2 border border-surface-4 text-brand-lime text-caption font-mono font-bold flex items-center justify-center shrink-0">
-                        {idx + 1}
-                      </span>
-                      <select
-                        value={stop}
-                        onChange={(e) => handleUpdateStop(idx, e.target.value)}
-                        className="flex-1 bg-surface-1 border border-surface-4 focus:border-brand-lime focus:outline-none rounded-xl py-2.5 px-4 text-body text-brand-white transition-colors"
-                      >
-                        {BLOCKS.map((b) => (
-                          <option key={b} value={b}>{b}</option>
-                        ))}
-                      </select>
-                      {multiStops.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveStop(idx)}
-                          className="p-2 rounded-xl bg-surface-2 hover:bg-status-error/10 text-brand-gray hover:text-status-error border border-surface-4 transition-colors"
-                          aria-label="Remove stop"
-                        >
-                          <X className="h-4 w-4" />
-                        </button>
-                      )}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Single Trip Card */}
+                <div
+                  onClick={() => {
+                    setTripMode("single");
+                    setStep(2);
+                  }}
+                  className={`ather-card ather-card-hover p-6 cursor-pointer border-2 transition-all flex flex-col justify-between space-y-4 ${
+                    tripMode === "single"
+                      ? "bg-[#F6F6F4] border-[#84E000]"
+                      : "bg-white border-transparent"
+                  }`}
+                >
+                  <div className="flex items-center space-x-3">
+                    <div className="p-3 rounded-2xl bg-[#FFE234] text-[#0F172A]">
+                      <Navigation className="h-6 w-6" />
                     </div>
-                  ))}
+                    <div>
+                      <h4 className="font-extrabold text-[#0F172A] text-body">Single Trip</h4>
+                      <span className="text-micro font-bold text-[#64748B]">Direct Point-to-Point</span>
+                    </div>
+                  </div>
+                  <p className="text-caption text-[#64748B]">
+                    Robot travels directly from origin block to one target building for immediate retrieval.
+                  </p>
+                  <div className="pt-2 flex justify-end">
+                    <span className="px-3 py-1 rounded-xl bg-[#0F172A] text-white text-micro font-bold flex items-center space-x-1">
+                      <span>Select</span>
+                      <ArrowRight className="h-3.5 w-3.5 text-[#84E000]" />
+                    </span>
+                  </div>
+                </div>
 
-                  <button
-                    type="button"
-                    onClick={handleAddStop}
-                    className="mt-3 flex items-center space-x-2 px-4 py-2 rounded-xl bg-surface-2 hover:bg-surface-3 border border-surface-4 text-brand-lime text-caption font-bold transition-all"
-                  >
-                    <Plus className="h-4 w-4" />
-                    <span>Add Another Stop</span>
-                  </button>
+                {/* Multi-Trip Card */}
+                <div
+                  onClick={() => {
+                    setTripMode("multi");
+                    setStep(2);
+                  }}
+                  className={`ather-card ather-card-hover p-6 cursor-pointer border-2 transition-all flex flex-col justify-between space-y-4 ${
+                    tripMode === "multi"
+                      ? "bg-[#F6F6F4] border-[#84E000]"
+                      : "bg-white border-transparent"
+                  }`}
+                >
+                  <div className="flex items-center space-x-3">
+                    <div className="p-3 rounded-2xl bg-[#9CFF7A] text-[#0F172A]">
+                      <Layers className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <h4 className="font-extrabold text-[#0F172A] text-body">Multi-Trip Chain</h4>
+                      <span className="text-micro font-bold text-[#64748B]">Sequential Multi-Stop</span>
+                    </div>
+                  </div>
+                  <p className="text-caption text-[#64748B]">
+                    Robot visits a sequence of 2+ campus blocks sequentially in a single automated dispatch run.
+                  </p>
+                  <div className="pt-2 flex justify-end">
+                    <span className="px-3 py-1 rounded-xl bg-[#0F172A] text-white text-micro font-bold flex items-center space-x-1">
+                      <span>Select</span>
+                      <ArrowRight className="h-3.5 w-3.5 text-[#84E000]" />
+                    </span>
+                  </div>
                 </div>
               </div>
-            )}
-          </div>
+            </motion.div>
+          )}
 
-          {/* B5: Redesigned Robot Selection Cards */}
-          <div className="glassmorphism rounded-3xl p-6 border border-surface-4 space-y-6">
-            <h3 className="text-title font-bold flex items-center space-x-2">
-              <Bot className="h-5 w-5 text-brand-lime" />
-              <span>Select Robot Vehicle</span>
-            </h3>
-
-            {loadingRobots ? (
-              <div className="flex items-center space-x-2 py-6">
-                <Loader2 className="h-5 w-5 animate-spin text-brand-lime" />
-                <span className="text-caption text-brand-gray/50">Querying live fleet status...</span>
+          {/* ── STEP 2: CAMPUS ROUTING ─────────────────────────────────── */}
+          {step === 2 && (
+            <motion.div
+              key="step2"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.25 }}
+              className="ather-card p-6 space-y-6"
+            >
+              <div>
+                <h3 className="text-title font-extrabold text-[#0F172A] flex items-center space-x-2">
+                  <MapPin className="h-5 w-5 text-[#84E000]" />
+                  <span>Campus Block Routing</span>
+                </h3>
+                <p className="text-caption text-[#64748B]">
+                  Select origin pickup location and destination building(s) on Silver Oak campus.
+                </p>
               </div>
-            ) : robots.length === 0 ? (
-              <div className="p-4 rounded-2xl bg-brand-yellow/10 border border-brand-yellow/20 text-brand-yellow text-caption font-semibold">
-                No fleet units currently registered. Please refresh or seed fleet units.
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {robots.map((robot: any) => {
-                  const isIdle = robot.status === "idle";
-                  const isSelected = selectedRobotId === robot.id;
-                  const bat = robot.battery_level ?? 100;
-                  const batColor = bat < 20 ? "bg-status-error" : bat < 50 ? "bg-brand-yellow" : "bg-brand-lime";
 
-                  return (
-                    <div
-                      key={robot.id}
-                      onClick={() => {
-                        if (isIdle) {
-                          setValue("robot_id", robot.id, { shouldValidate: true });
-                        } else {
-                          toast.info(`${robot.name} is currently ${robot.status.replace("_", " ")} and unavailable for new dispatch.`);
-                        }
-                      }}
-                      className={`relative rounded-2xl p-4 border-2 transition-all flex flex-col justify-between space-y-3 ${
-                        isIdle ? "cursor-pointer" : "opacity-50 cursor-not-allowed"
-                      } ${
-                        isSelected
-                          ? "bg-brand-lime/10 border-brand-lime shadow-glow-lime/20 ring-1 ring-brand-lime/40"
-                          : "bg-surface-1 border-surface-3 hover:border-surface-4"
-                      }`}
+              {tripMode === "single" ? (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-caption font-bold text-[#0F172A]">Origin Pickup Block</label>
+                    <select
+                      {...register("origin_block")}
+                      className="w-full bg-[#F6F6F4] border border-[#E4E4E0] focus:border-[#84E000] outline-none rounded-2xl py-3.5 px-4 text-body font-bold text-[#0F172A] transition-colors"
                     >
-                      <div className="flex items-center space-x-3">
-                        <div className={`p-2.5 rounded-full border ${isSelected ? "bg-brand-lime/20 border-brand-lime text-brand-lime" : "bg-surface-2 border-surface-4 text-brand-gray"}`}>
-                          <Bot className="h-6 w-6" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <h4 className="font-bold text-brand-white text-caption truncate">{robot.name}</h4>
-                          <p className="text-micro text-brand-gray/50 truncate">{robot.model_type || "Standard Runner"}</p>
-                        </div>
-                      </div>
+                      {BLOCKS.map((b) => (
+                        <option key={b} value={b}>{b}</option>
+                      ))}
+                    </select>
+                  </div>
 
-                      {/* Battery Bar */}
-                      <div className="space-y-1">
-                        <div className="flex justify-between items-center text-micro">
-                          <span className="text-brand-gray/50 flex items-center gap-1">
-                            <Battery className="h-3.5 w-3.5" /> Battery
-                          </span>
-                          <span className="font-mono font-bold text-brand-white">{bat}%</span>
-                        </div>
-                        <div className="w-full h-1.5 rounded-full bg-surface-3 overflow-hidden">
-                          <div className={`h-full ${batColor} rounded-full transition-all`} style={{ width: `${bat}%` }} />
-                        </div>
-                      </div>
+                  <div className="space-y-2">
+                    <label className="text-caption font-bold text-[#0F172A]">Destination Arrival Block</label>
+                    <select
+                      {...register("destination_block")}
+                      className="w-full bg-[#F6F6F4] border border-[#E4E4E0] focus:border-[#84E000] outline-none rounded-2xl py-3.5 px-4 text-body font-bold text-[#0F172A] transition-colors"
+                    >
+                      {BLOCKS.map((b) => (
+                        <option key={b} value={b}>{b}</option>
+                      ))}
+                    </select>
+                  </div>
 
-                      {/* Status Badge */}
-                      <div className="pt-1 flex items-center justify-between">
-                        <span className={`text-micro font-bold px-2 py-0.5 rounded capitalize ${
-                          isIdle
-                            ? "bg-brand-lime/10 text-brand-lime border border-brand-lime/20"
-                            : "bg-surface-2 text-brand-gray/60 border border-surface-4"
-                        }`}>
-                          {isIdle ? "Available" : robot.status.replace("_", " ")}
+                  {/* Quick Block Pills */}
+                  <div className="pt-2 space-y-2">
+                    <span className="text-micro font-bold text-[#64748B] uppercase tracking-wider">Quick Select Destination</span>
+                    <div className="flex flex-wrap gap-2">
+                      {BLOCKS.map((b) => (
+                        <button
+                          key={b}
+                          type="button"
+                          onClick={() => setValue("destination_block", b as any)}
+                          className={`px-3 py-1.5 rounded-xl text-micro font-bold transition-all ${
+                            destinationBlock === b
+                              ? "bg-[#FFE234] text-[#0F172A]"
+                              : "bg-[#F6F6F4] text-[#64748B] hover:text-[#0F172A]"
+                          }`}
+                        >
+                          {b}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-caption font-bold text-[#0F172A]">Origin Pickup Block</label>
+                    <select
+                      {...register("origin_block")}
+                      className="w-full bg-[#F6F6F4] border border-[#E4E4E0] focus:border-[#84E000] outline-none rounded-2xl py-3.5 px-4 text-body font-bold text-[#0F172A] transition-colors"
+                    >
+                      {BLOCKS.map((b) => (
+                        <option key={b} value={b}>{b}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-3 pt-2">
+                    <label className="text-caption font-bold text-[#0F172A] block">
+                      Multi-Stop Sequence Chain
+                    </label>
+                    {multiStops.map((stop, idx) => (
+                      <div key={idx} className="flex items-center space-x-3">
+                        <span className="h-9 w-9 rounded-full bg-[#0F172A] text-white text-caption font-black flex items-center justify-center shrink-0">
+                          {idx + 1}
                         </span>
-                        {isSelected && (
-                          <span className="text-micro font-extrabold text-brand-lime">Selected ✓</span>
+                        <select
+                          value={stop}
+                          onChange={(e) => handleUpdateStop(idx, e.target.value)}
+                          className="flex-1 bg-[#F6F6F4] border border-[#E4E4E0] focus:border-[#84E000] outline-none rounded-2xl py-3 px-4 text-body font-bold text-[#0F172A]"
+                        >
+                          {BLOCKS.map((b) => (
+                            <option key={b} value={b}>{b}</option>
+                          ))}
+                        </select>
+                        {multiStops.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveStop(idx)}
+                            className="p-3 rounded-2xl bg-[#F6F6F4] text-red-500 hover:bg-red-50 transition-colors"
+                          >
+                            <X className="h-5 w-5" />
+                          </button>
                         )}
                       </div>
-                    </div>
-                  );
-                })}
+                    ))}
+
+                    <button
+                      type="button"
+                      onClick={handleAddStop}
+                      className="mt-3 flex items-center space-x-2 px-4 py-2.5 rounded-2xl bg-[#F6F6F4] hover:bg-[#FFE234] text-[#0F172A] text-caption font-extrabold transition-all"
+                    >
+                      <Plus className="h-4 w-4 text-[#84E000]" />
+                      <span>Add Next Stop</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <button
+                type="button"
+                onClick={nextStep}
+                className="w-full py-4 rounded-2xl bg-[#0F172A] text-white font-extrabold text-body hover:bg-black transition-all flex items-center justify-center space-x-2 shadow-sm"
+              >
+                <span>Continue to Select Robot</span>
+                <ArrowRight className="h-5 w-5 text-[#84E000]" />
+              </button>
+            </motion.div>
+          )}
+
+          {/* ── STEP 3: SELECT ROBOT VEHICLE ────────────────────────────── */}
+          {step === 3 && (
+            <motion.div
+              key="step3"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.25 }}
+              className="ather-card p-6 space-y-6"
+            >
+              <div>
+                <h3 className="text-title font-extrabold text-[#0F172A] flex items-center space-x-2">
+                  <Bot className="h-5 w-5 text-[#84E000]" />
+                  <span>Select Autonomous Unit</span>
+                </h3>
+                <p className="text-caption text-[#64748B]">
+                  Select from active fleet units featuring high battery levels and live telemetry status.
+                </p>
               </div>
-            )}
-            {errors.robot_id && (
-              <p className="text-micro text-status-error font-semibold">{errors.robot_id.message}</p>
-            )}
-          </div>
 
-          {/* B3: Booking for Myself / Someone Else */}
-          <div className="glassmorphism rounded-3xl p-6 border border-surface-4 space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-surface-4/40 pb-4">
-              <h3 className="text-title font-bold flex items-center space-x-2">
-                <Package className="h-5 w-5 text-brand-lime" />
-                <span>Package & Recipient Details</span>
-              </h3>
+              {loadingRobots ? (
+                <div className="flex items-center space-x-2 py-8 text-[#64748B]">
+                  <Loader2 className="h-5 w-5 animate-spin text-[#84E000]" />
+                  <span className="text-caption font-bold">Querying live fleet status...</span>
+                </div>
+              ) : robots.length === 0 ? (
+                <div className="p-4 rounded-2xl bg-[#FFE234]/20 text-[#0F172A] text-caption font-bold">
+                  No fleet units registered. Please seed units in fleet management.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {robots.map((robot: any) => {
+                    const isIdle = robot.status === "idle";
+                    const isSelected = selectedRobotId === robot.id;
+                    const bat = robot.battery_level ?? 100;
 
-              {/* Segmented Control */}
-              <div className="inline-flex p-1 rounded-xl bg-surface-1 border border-surface-3">
+                    return (
+                      <div
+                        key={robot.id}
+                        onClick={() => {
+                          if (isIdle) {
+                            setValue("robot_id", robot.id, { shouldValidate: true });
+                          } else {
+                            toast.info(`${robot.name} is currently ${robot.status.replace("_", " ")}.`);
+                          }
+                        }}
+                        className={`ather-card ather-card-hover p-5 cursor-pointer border-2 transition-all flex flex-col justify-between space-y-4 ${
+                          isIdle ? "" : "opacity-50 cursor-not-allowed"
+                        } ${
+                          isSelected
+                            ? "bg-[#F6F6F4] border-[#84E000]"
+                            : "bg-white border-transparent"
+                        }`}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center space-x-3">
+                            {/* Robo.webp Avatar */}
+                            <div className="w-12 h-12 rounded-2xl bg-[#FFE234] flex items-center justify-center p-1 shadow-xs shrink-0">
+                              <img src="/Robo.webp" alt="Robo" className="w-10 h-10 object-contain" />
+                            </div>
+                            <div>
+                              <h4 className="font-extrabold text-[#0F172A] text-body">{robot.name}</h4>
+                              <p className="text-micro font-bold text-[#64748B]">{robot.model_type || "Standard Runner"}</p>
+                            </div>
+                          </div>
+
+                          {isSelected && (
+                            <span className="px-2.5 py-0.5 rounded-full bg-[#84E000] text-[#0F172A] text-micro font-black">
+                              Selected ✓
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Battery Progress */}
+                        <div className="space-y-1">
+                          <div className="flex justify-between items-center text-micro font-bold text-[#64748B]">
+                            <span className="flex items-center gap-1">
+                              <Battery className="h-3.5 w-3.5 text-[#84E000]" /> Battery
+                            </span>
+                            <span className="text-[#0F172A]">{bat}%</span>
+                          </div>
+                          <div className="w-full h-1.5 rounded-full bg-[#E4E4E0] overflow-hidden">
+                            <div className="h-full bg-[#84E000] rounded-full" style={{ width: `${bat}%` }} />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              <button
+                type="button"
+                onClick={nextStep}
+                disabled={!selectedRobotId}
+                className="w-full py-4 rounded-2xl bg-[#0F172A] text-white font-extrabold text-body hover:bg-black transition-all flex items-center justify-center space-x-2 shadow-sm disabled:opacity-50"
+              >
+                <span>Continue to Package Details</span>
+                <ArrowRight className="h-5 w-5 text-[#84E000]" />
+              </button>
+            </motion.div>
+          )}
+
+          {/* ── STEP 4: PACKAGE & RECIPIENT DETAILS + SUMMARY ──────────── */}
+          {step === 4 && (
+            <motion.div
+              key="step4"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.25 }}
+              className="ather-card p-6 space-y-6"
+            >
+              <div>
+                <h3 className="text-title font-extrabold text-[#0F172A] flex items-center space-x-2">
+                  <Package className="h-5 w-5 text-[#84E000]" />
+                  <span>Package &amp; Recipient Details</span>
+                </h3>
+                <p className="text-caption text-[#64748B]">
+                  Provide parcel info and review mission summary before dispatching.
+                </p>
+              </div>
+
+              {/* Booking For Toggle */}
+              <div className="p-1 rounded-2xl bg-[#F6F6F4] flex items-center space-x-1">
                 <button
                   type="button"
                   onClick={() => setBookingFor("myself")}
-                  className={`px-3 py-1.5 rounded-lg text-micro font-bold transition-all ${
+                  className={`flex-1 py-2 rounded-xl text-caption font-extrabold transition-all ${
                     bookingFor === "myself"
-                      ? "bg-brand-lime text-brand-black shadow-sm"
-                      : "text-brand-gray/60 hover:text-brand-white"
+                      ? "bg-white text-[#0F172A] shadow-xs"
+                      : "text-[#64748B]"
                   }`}
                 >
                   Booking For: Myself
@@ -439,169 +635,114 @@ export default function NewDeliveryPage() {
                 <button
                   type="button"
                   onClick={() => setBookingFor("someone_else")}
-                  className={`px-3 py-1.5 rounded-lg text-micro font-bold transition-all ${
+                  className={`flex-1 py-2 rounded-xl text-caption font-extrabold transition-all ${
                     bookingFor === "someone_else"
-                      ? "bg-brand-lime text-brand-black shadow-sm"
-                      : "text-brand-gray/60 hover:text-brand-white"
+                      ? "bg-white text-[#0F172A] shadow-xs"
+                      : "text-[#64748B]"
                   }`}
                 >
                   Someone Else
                 </button>
               </div>
-            </div>
 
-            {bookingFor === "someone_else" ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-caption font-semibold text-brand-gray/70 flex items-center space-x-1.5">
-                    <User className="h-4 w-4 text-brand-gray/40" />
-                    <span>Receiver Name</span>
-                  </label>
-                  <input
-                    {...register("receiver_name")}
-                    type="text"
-                    placeholder="Dr. Amit Patel"
-                    className="w-full bg-surface-1 border border-surface-4 focus:border-brand-lime focus:outline-none rounded-xl py-3 px-4 text-body text-brand-white transition-colors"
-                  />
-                  {errors.receiver_name && (
-                    <p className="text-micro text-status-error">{errors.receiver_name.message}</p>
-                  )}
-                </div>
+              {bookingFor === "someone_else" && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-caption font-bold text-[#0F172A]">Receiver Name</label>
+                    <input
+                      {...register("receiver_name")}
+                      type="text"
+                      placeholder="Dr. Amit Patel"
+                      className="w-full bg-[#F6F6F4] border border-[#E4E4E0] focus:border-[#84E000] outline-none rounded-2xl py-3 px-4 text-body font-bold text-[#0F172A]"
+                    />
+                  </div>
 
-                <div className="space-y-2">
-                  <label className="text-caption font-semibold text-brand-gray/70 flex items-center space-x-1.5">
-                    <Phone className="h-4 w-4 text-brand-gray/40" />
-                    <span>Receiver Phone (SMS OTP)</span>
-                  </label>
-                  <input
-                    {...register("receiver_phone")}
-                    type="text"
-                    placeholder="9876543210"
-                    className="w-full bg-surface-1 border border-surface-4 focus:border-brand-lime focus:outline-none rounded-xl py-3 px-4 text-body text-brand-white transition-colors"
-                  />
-                  {errors.receiver_phone && (
-                    <p className="text-micro text-status-error">{errors.receiver_phone.message}</p>
-                  )}
+                  <div className="space-y-2">
+                    <label className="text-caption font-bold text-[#0F172A]">Receiver Phone (SMS OTP)</label>
+                    <input
+                      {...register("receiver_phone")}
+                      type="text"
+                      placeholder="9876543210"
+                      className="w-full bg-[#F6F6F4] border border-[#E4E4E0] focus:border-[#84E000] outline-none rounded-2xl py-3 px-4 text-body font-bold text-[#0F172A]"
+                    />
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <div className="p-4 rounded-2xl bg-surface-1 border border-surface-3 flex items-center justify-between text-caption">
-                <div>
-                  <p className="font-bold text-brand-white">{user?.full_name || "Campus User"}</p>
-                  <p className="text-micro text-brand-gray/50">{user?.phone || "No phone number saved"}</p>
-                </div>
-                {!user?.phone && (
-                  <span className="text-micro text-brand-yellow font-semibold">
-                    Add a phone number in Settings to use this
-                  </span>
-                )}
-              </div>
-            )}
-
-            {/* Package Description */}
-            <div className="space-y-2">
-              <label className="text-caption font-semibold text-brand-gray/70">Package Description</label>
-              <textarea
-                {...register("package_description")}
-                rows={3}
-                placeholder="E.g., Lab supplies, project documents, academic records..."
-                className="w-full bg-surface-1 border border-surface-4 focus:border-brand-lime focus:outline-none rounded-xl py-3 px-4 text-body text-brand-white transition-colors resize-none"
-              />
-              {errors.package_description && (
-                <p className="text-micro text-status-error">{errors.package_description.message}</p>
               )}
-            </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              {/* Weight */}
-              <div className="space-y-2">
-                <label className="text-caption font-semibold text-brand-gray/70">Estimated Weight (kg)</label>
-                <input
-                  {...register("package_weight_kg")}
-                  type="number"
-                  step="0.1"
-                  placeholder="1.5"
-                  className="w-full bg-surface-1 border border-surface-4 focus:border-brand-lime focus:outline-none rounded-xl py-3 px-4 text-body text-brand-white transition-colors"
-                />
-                {errors.package_weight_kg && (
-                  <p className="text-micro text-status-error">{errors.package_weight_kg.message}</p>
-                )}
-              </div>
+              {/* Package Details Inputs */}
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-caption font-bold text-[#0F172A]">Package Description</label>
+                  <textarea
+                    {...register("package_description")}
+                    rows={2}
+                    placeholder="E.g., Lab supplies, academic records, hardware tools..."
+                    className="w-full bg-[#F6F6F4] border border-[#E4E4E0] focus:border-[#84E000] outline-none rounded-2xl py-3 px-4 text-body font-bold text-[#0F172A] resize-none"
+                  />
+                </div>
 
-              {/* B4: Priority (Only Normal / High) */}
-              <div className="space-y-2">
-                <label className="text-caption font-semibold text-brand-gray/70">Delivery Priority</label>
-                <select
-                  {...register("priority")}
-                  className="w-full bg-surface-1 border border-surface-4 focus:border-brand-lime focus:outline-none rounded-xl py-3 px-4 text-body text-brand-white transition-colors"
-                >
-                  <option value="normal">Normal (Default)</option>
-                  <option value="high">High (Urgent Dispatch)</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          {/* Submit */}
-          <button
-            type="submit"
-            disabled={isSubmitting || loadingRobots || !selectedRobotId}
-            className="w-full py-4 rounded-2xl bg-brand-lime text-brand-black font-extrabold text-body hover:shadow-glow-lime hover:scale-[1.01] active:scale-95 transition-all flex items-center justify-center space-x-2 disabled:opacity-50 disabled:hover:scale-100 disabled:hover:shadow-none"
-          >
-            {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin" /> : <ArrowRight className="h-5 w-5" />}
-            <span>Dispatch Active Mission</span>
-          </button>
-        </form>
-
-        {/* B10: Fleet Status Sidebar */}
-        <div className="glassmorphism rounded-3xl border border-surface-4 p-6 space-y-6 lg:sticky lg:top-24">
-          <div className="flex items-center justify-between">
-            <h3 className="text-caption font-extrabold uppercase tracking-wider text-brand-white flex items-center space-x-2">
-              <Bot className="h-4 w-4 text-brand-lime" />
-              <span>Fleet Status</span>
-            </h3>
-            <Link
-              href="/dashboard/robots"
-              className="text-micro font-bold text-brand-lime hover:underline flex items-center space-x-1"
-            >
-              <span>Manage</span>
-              <span>→</span>
-            </Link>
-          </div>
-
-          <div className="space-y-4">
-            {robots.map((r: any) => {
-              const isIdle = r.status === "idle";
-              const bat = r.battery_level ?? 100;
-              const batColor = bat < 20 ? "bg-status-error" : bat < 50 ? "bg-brand-yellow" : "bg-brand-lime";
-
-              return (
-                <div key={r.id} className="p-3.5 rounded-2xl bg-surface-1 border border-surface-3 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-brand-white text-caption">{r.name}</span>
-                    <span className={`text-micro font-bold px-2 py-0.5 rounded capitalize ${
-                      isIdle
-                        ? "bg-brand-lime/10 text-brand-lime border border-brand-lime/20"
-                        : "bg-surface-2 text-brand-gray/60 border border-surface-4"
-                    }`}>
-                      {r.status.replace("_", " ")}
-                    </span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-caption font-bold text-[#0F172A]">Estimated Weight (kg)</label>
+                    <input
+                      {...register("package_weight_kg")}
+                      type="number"
+                      step="0.1"
+                      placeholder="1.5"
+                      className="w-full bg-[#F6F6F4] border border-[#E4E4E0] focus:border-[#84E000] outline-none rounded-2xl py-3 px-4 text-body font-bold text-[#0F172A]"
+                    />
                   </div>
-                  <div className="space-y-1">
-                    <div className="flex justify-between items-center text-micro text-brand-gray/50">
-                      <span>Battery</span>
-                      <span className="font-mono font-bold text-brand-white">{bat}%</span>
-                    </div>
-                    <div className="w-full h-1.5 rounded-full bg-surface-3 overflow-hidden">
-                      <div className={`h-full ${batColor} rounded-full`} style={{ width: `${bat}%` }} />
-                    </div>
+
+                  <div className="space-y-2">
+                    <label className="text-caption font-bold text-[#0F172A]">Delivery Priority</label>
+                    <select
+                      {...register("priority")}
+                      className="w-full bg-[#F6F6F4] border border-[#E4E4E0] focus:border-[#84E000] outline-none rounded-2xl py-3 px-4 text-body font-bold text-[#0F172A]"
+                    >
+                      <option value="normal">Normal (Standard Speed)</option>
+                      <option value="high">High (Urgent Dispatch)</option>
+                    </select>
                   </div>
                 </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
+              </div>
+
+              {/* Mission Summary Review Box */}
+              <div className="p-4 rounded-2xl bg-[#F6F6F4] border border-[#E4E4E0] space-y-3">
+                <h4 className="text-caption font-extrabold uppercase tracking-wider text-[#0F172A] flex items-center space-x-1.5">
+                  <ShieldCheck className="h-4 w-4 text-[#84E000]" />
+                  <span>Mission Summary Review</span>
+                </h4>
+                <div className="grid grid-cols-2 gap-2 text-caption">
+                  <div>
+                    <span className="text-[#64748B] block text-micro">Routing</span>
+                    <span className="font-bold text-[#0F172A]">{originBlock} ➔ {destinationBlock}</span>
+                  </div>
+                  <div>
+                    <span className="text-[#64748B] block text-micro">Selected Unit</span>
+                    <span className="font-bold text-[#0F172A]">{selectedRobot?.name || "Auto Unit"}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Submit Dispatch Button */}
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full py-4 rounded-2xl bg-[#84E000] text-[#0F172A] font-black text-body hover:bg-[#9CFF7A] transition-all flex items-center justify-center space-x-2 shadow-md disabled:opacity-50"
+              >
+                {isSubmitting ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <Sparkles className="h-5 w-5" />
+                )}
+                <span>Dispatch Active Mission</span>
+              </button>
+            </motion.div>
+          )}
+
+        </AnimatePresence>
+      </form>
+
     </div>
   );
 }

@@ -38,8 +38,8 @@ import dynamic from "next/dynamic";
 const CampusMap = dynamic(() => import("@/components/CampusMap"), {
   ssr: false,
   loading: () => (
-    <div className="glassmorphism rounded-2xl border border-surface-4 p-4 h-[380px] flex items-center justify-center">
-      <span className="text-micro text-brand-gray/40">Loading campus map…</span>
+    <div className="ather-card p-4 h-[380px] flex items-center justify-center">
+      <span className="text-micro font-bold text-[#64748B]">Loading campus map…</span>
     </div>
   ),
 });
@@ -84,10 +84,10 @@ function FlowStepper({ status, isPreloaded }: { status: string; isPreloaded: boo
               <div
                 className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center border-2 transition-all shrink-0 ${
                   isDone
-                    ? "bg-brand-lime border-brand-lime text-brand-black shadow-glow-lime/20"
+                    ? "bg-[#84E000] border-[#84E000] text-[#0F172A] font-black"
                     : isActive
-                    ? "bg-brand-lime/20 border-brand-lime text-brand-lime animate-pulse"
-                    : "bg-surface-2 border-surface-4 text-brand-gray/30"
+                    ? "bg-[#FFE234] border-[#0F172A] text-[#0F172A] animate-pulse"
+                    : "bg-[#E4E4E0] border-[#D8D8D2] text-[#64748B]"
                 }`}
               >
                 {isDone ? <CheckCircle2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> : <Icon className="h-3 w-3 sm:h-3.5 sm:w-3.5" />}
@@ -95,21 +95,17 @@ function FlowStepper({ status, isPreloaded }: { status: string; isPreloaded: boo
               <span
                 className={`text-micro mt-1 text-center leading-tight max-w-[65px] sm:max-w-none break-words ${
                   isDone
-                    ? "text-brand-lime font-semibold"
+                    ? "text-[#84E000] font-black"
                     : isActive
-                    ? "text-brand-white font-bold"
-                    : "text-brand-gray/30"
+                    ? "text-[#0F172A] font-extrabold"
+                    : "text-[#64748B]"
                 }`}
               >
                 {step.label}
               </span>
             </div>
             {i < steps.length - 1 && (
-              <div
-                className={`h-0.5 flex-1 min-w-[12px] mx-1 rounded transition-all ${
-                  i < activeIdx ? "bg-brand-lime" : "bg-surface-4"
-                }`}
-              />
+              <div className={`h-0.5 flex-1 mx-1 ${i < activeIdx ? "bg-[#84E000]" : "bg-[#E4E4E0]"}`} />
             )}
           </div>
         );
@@ -462,31 +458,6 @@ export default function TrackingPage() {
         <FlowStepper status={delivery.status} isPreloaded={delivery.is_preloaded} />
       </div>
 
-      {/* Pickup Phase Alert */}
-      {isPickupPhase && (
-        <div className="rounded-2xl border-2 border-brand-yellow/40 bg-brand-yellow/5 p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex items-center space-x-3">
-            <div className="p-3 rounded-xl bg-brand-yellow/20 text-brand-yellow shrink-0">
-              <PackageCheck className="h-6 w-6" />
-            </div>
-            <div>
-              <p className="text-body font-extrabold text-brand-yellow">Robot is at your Origin Block!</p>
-              <p className="text-caption text-brand-gray/60 mt-0.5">
-                Place the parcel inside the robot compartment, then tap the button below.
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={handleDoneFetching}
-            disabled={fetchingDone}
-            className="shrink-0 flex items-center gap-2 px-5 py-3 rounded-xl bg-brand-yellow text-brand-black font-extrabold hover:scale-[1.02] transition-all disabled:opacity-60"
-          >
-            {fetchingDone ? <Loader2 className="h-5 w-5 animate-spin" /> : <ArrowRight className="h-5 w-5" />}
-            <span>{fetchingDone ? "Dispatching..." : "Done Fetching — Dispatch to Destination 🚀"}</span>
-          </button>
-        </div>
-      )}
-
       {/* Grid */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
 
@@ -680,6 +651,33 @@ export default function TrackingPage() {
               </div>
             )}
 
+            {/* Pickup Phase Instruction & Dispatch Card (Placed Below Compartment) */}
+            {isPickupPhase && (
+              <div className="ather-banner-yellow p-4 rounded-2xl space-y-3 shadow-md">
+                <div className="flex items-start space-x-3">
+                  <div className="p-2.5 rounded-xl bg-white/20 text-[#0F172A] shrink-0">
+                    <PackageCheck className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-caption font-black text-[#0F172A]">
+                      Robot is at your Origin Block!
+                    </h3>
+                    <p className="text-micro font-bold text-[#0F172A]/70 mt-0.5">
+                      Place the parcel inside the robot compartment, then tap the button below.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={handleDoneFetching}
+                  disabled={fetchingDone}
+                  className="w-full py-3 rounded-xl bg-[#0F172A] text-white font-extrabold hover:bg-black transition-all flex items-center justify-center space-x-2 disabled:opacity-60 cursor-pointer shadow-sm"
+                >
+                  {fetchingDone ? <Loader2 className="h-5 w-5 animate-spin text-[#84E000]" /> : <ArrowRight className="h-5 w-5 text-[#84E000]" />}
+                  <span>{fetchingDone ? "Dispatching..." : "Done Fetching — Dispatch to Destination 🚀"}</span>
+                </button>
+              </div>
+            )}
+
             {delivery.status === "pending" && (
               <div className="space-y-1.5">
                 <button
@@ -689,10 +687,10 @@ export default function TrackingPage() {
                       toast.warning("Close the compartment before starting the trip!");
                       return;
                     }
-                    setShowConfirmModal(true);
+                    handleStartMission();
                   }}
                   disabled={isCompartmentOpen}
-                  className="w-full py-3 rounded-xl bg-brand-lime text-brand-black font-extrabold hover:shadow-glow-lime transition-all flex items-center justify-center space-x-2 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:shadow-none"
+                  className="w-full py-3 rounded-xl bg-brand-lime text-brand-black font-extrabold hover:shadow-glow-lime transition-all flex items-center justify-center space-x-2 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:shadow-none cursor-pointer"
                 >
                   <Play className="h-5 w-5 fill-current" />
                   <span>{delivery.is_preloaded ? "Dispatch Robot" : "Start Mission — Send Robot to Origin"}</span>
@@ -724,42 +722,6 @@ export default function TrackingPage() {
           </div>
         </div>
       </div>
-
-      {/* Start Mission Confirmation Modal */}
-      {showConfirmModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-surface-0/80 backdrop-blur-sm">
-          <div className="glassmorphism rounded-3xl border border-surface-4 p-6 max-w-md w-full space-y-5 shadow-2xl animate-in fade-in zoom-in duration-200">
-            <div className="flex items-center space-x-3 text-brand-lime">
-              <div className="p-3 rounded-2xl bg-brand-lime/10 border border-brand-lime/20">
-                <Play className="h-6 w-6 fill-current" />
-              </div>
-              <h3 className="text-title font-extrabold text-brand-white">Start delivery trip?</h3>
-            </div>
-            <p className="text-caption text-brand-gray/70 leading-relaxed">
-              The robot will begin its route and cannot be recalled once dispatched. Ensure all items are safely loaded inside the compartment.
-            </p>
-            <div className="flex items-center justify-end space-x-3 pt-2">
-              <button
-                type="button"
-                onClick={() => setShowConfirmModal(false)}
-                className="px-4 py-2.5 rounded-xl border border-surface-4 text-brand-gray hover:text-brand-white hover:bg-surface-2 text-caption font-bold transition-all"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowConfirmModal(false);
-                  handleStartMission();
-                }}
-                className="px-5 py-2.5 rounded-xl bg-brand-lime text-brand-black text-caption font-extrabold hover:shadow-glow-lime transition-all"
-              >
-                Confirm & Start 🚀
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

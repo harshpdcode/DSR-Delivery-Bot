@@ -1,14 +1,6 @@
 "use client";
 
-/**
- * CampusMap — real, interactive Leaflet map (OpenStreetMap tiles) centered on
- * Silver Oak University, Gota, Ahmedabad. 100% free — no API key required.
- *
- * Styled dark with lime accents to match the Ather-app-inspired brand theme
- * already defined in tailwind.config.js (brand.lime #C6FF00 / surface blacks).
- */
-
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { useTheme } from "next-themes";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -24,9 +16,6 @@ export interface CampusWaypoint {
   label: string;
 }
 
-// Approximate block layout around the real campus center. Nudge these to
-// match actual building positions once you have them (e.g. from Google Maps
-// "drop a pin" -> copy coordinates).
 export const CAMPUS_WAYPOINTS: CampusWaypoint[] = [
   { lat: 23.0906, lng: 72.5344, label: "A Block" },
   { lat: 23.0912, lng: 72.5351, label: "B Block" },
@@ -36,65 +25,75 @@ export const CAMPUS_WAYPOINTS: CampusWaypoint[] = [
   { lat: 23.0898, lng: 72.5348, label: "Canteen" },
 ];
 
-// ── Custom lime "robot" marker (divIcon, no external image needed) ─────────
-function robotIcon(heading = 0) {
+// ── Custom Robo.webp robot marker ─────────
+function robotIcon(heading = 0, isAnimated = false) {
   return L.divIcon({
     className: "",
     html: `
       <div style="
-        width:34px;height:34px;position:relative;
+        width:44px;height:44px;position:relative;
         transform:rotate(${heading}deg);
+        transition: transform 0.4s ease-out;
       ">
         <div style="
-          position:absolute;inset:0;border-radius:9999px;
-          background:#84E000;opacity:0.25;
+          position:absolute;inset:-6px;border-radius:9999px;
+          background:#84E000;opacity:0.35;
           animation:campusPulse 2s ease-out infinite;
         "></div>
         <div style="
-          position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-          width:16px;height:16px;border-radius:9999px;
-          background:#84E000;border:2px solid #0A0A0A;
-          box-shadow:0 0 10px rgba(132,224,0,0.8);
-        "></div>
+          position:absolute;inset:0;border-radius:9999px;
+          background:#FFE234;border:2px solid #0F172A;
+          box-shadow:0 0 14px rgba(132,224,0,0.85);
+          display:flex;align-items:center;justify-content:center;
+          overflow:hidden;padding:2px;
+        ">
+          <img src="/Robo.webp" style="width:100%;height:100%;object-fit:contain;" />
+        </div>
       </div>
       <style>
         @keyframes campusPulse {
-          0% { transform: scale(0.6); opacity: 0.35; }
-          100% { transform: scale(1.6); opacity: 0; }
+          0% { transform: scale(0.7); opacity: 0.5; }
+          100% { transform: scale(1.7); opacity: 0; }
         }
       </style>
     `,
-    iconSize: [34, 34],
-    iconAnchor: [17, 17],
+    iconSize: [44, 44],
+    iconAnchor: [22, 22],
   });
 }
 
 // Static waypoint (block) marker
-const blockIcon = L.divIcon({
+const blockIcon = (label: string) => L.divIcon({
   className: "",
   html: `
     <div style="
-      width:14px;height:14px;border-radius:9999px;
-      background:#1F2433;border:2px solid #3A3D4A;
-      box-shadow:0 0 4px rgba(0,0,0,0.6);
-    "></div>
+      padding: 3px 8px;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1.5px solid #84E000;
+      border-radius: 8px;
+      color: #FFFFFF;
+      font-size: 10px;
+      font-weight: 800;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+      white-space: nowrap;
+    ">
+      ${label}
+    </div>
   `,
-  iconSize: [14, 14],
-  iconAnchor: [7, 7],
+  iconSize: [60, 24],
+  iconAnchor: [30, 12],
 });
 
-// Keeps the map smoothly following the robot without the user losing manual pan/zoom control
 function FollowRobot({ position, follow }: { position: [number, number]; follow: boolean }) {
   const map = useMap();
   useEffect(() => {
-    if (follow) {
-      map.panTo(position, { animate: true, duration: 0.8 });
+    if (follow && position) {
+      map.panTo(position, { animate: true, duration: 1.2 });
     }
   }, [position, follow, map]);
   return null;
 }
 
-// Keeps map container properly sized when rendered dynamically
 function MapResizer() {
   const map = useMap();
   useEffect(() => {
@@ -105,80 +104,165 @@ function MapResizer() {
   return null;
 }
 
+export interface RobotEntry {
+  id?: number;
+  name?: string;
+  lat: number;
+  lng: number;
+  heading?: number;
+  status?: string;
+}
+
 export interface CampusMapProps {
-  /** Live robot position */
-  robot?: { lat: number; lng: number; heading?: number };
-  /** Waypoint set to render as static markers; defaults to CAMPUS_WAYPOINTS */
+  /** Single robot or multiple robots */
+  robot?: RobotEntry;
+  robotsList?: RobotEntry[];
   waypoints?: CampusWaypoint[];
-  /** Optional path trail (e.g. route taken so far) */
   trail?: [number, number][];
-  /** Auto-pan the map to keep the robot centered as it moves */
   followRobot?: boolean;
-  /** Map height (any valid CSS value) */
   height?: string;
   className?: string;
+  isDarkTheme?: boolean;
 }
 
 export default function CampusMap({
   robot,
+  robotsList,
   waypoints = CAMPUS_WAYPOINTS,
   trail,
   followRobot = false,
-  height = "320px",
+  height = "340px",
   className = "",
+  isDarkTheme,
 }: CampusMapProps) {
-  const { theme } = useTheme();
-  const isAther = theme === "ather";
+  const { theme, resolvedTheme } = useTheme();
+  const currentTheme = resolvedTheme || theme;
+  const isLight = currentTheme === "light" || currentTheme === "ather";
+  const isDark = isDarkTheme !== undefined ? isDarkTheme : !isLight;
 
-  const robotPos = useMemo<[number, number] | null>(
-    () => (robot && robot.lat && robot.lng && Math.abs(robot.lat) <= 90 ? [robot.lat, robot.lng] : null),
-    [robot]
+  // Smooth position interpolation for main robot
+  const [animatedPos, setAnimatedPos] = useState<[number, number] | null>(
+    robot && robot.lat && robot.lng ? [robot.lat, robot.lng] : null
+  );
+  const targetPosRef = useRef<[number, number] | null>(
+    robot && robot.lat && robot.lng ? [robot.lat, robot.lng] : null
   );
 
-  const tileUrl = isAther
-    ? "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-    : "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
+  useEffect(() => {
+    if (robot && robot.lat && robot.lng && Math.abs(robot.lat) <= 90) {
+      targetPosRef.current = [robot.lat, robot.lng];
+      if (!animatedPos) {
+        setAnimatedPos([robot.lat, robot.lng]);
+      }
+    }
+  }, [robot?.lat, robot?.lng]);
+
+  // Smooth movement animation loop
+  useEffect(() => {
+    let animFrame: number;
+    const animate = () => {
+      if (targetPosRef.current && animatedPos) {
+        const [targetLat, targetLng] = targetPosRef.current;
+        const [curLat, curLng] = animatedPos;
+        
+        const dLat = targetLat - curLat;
+        const dLng = targetLng - curLng;
+        const dist = Math.sqrt(dLat * dLat + dLng * dLng);
+
+        if (dist > 0.000001) {
+          // Move 5% closer each frame for smooth fluid gliding
+          const nextLat = curLat + dLat * 0.05;
+          const nextLng = curLng + dLng * 0.05;
+          setAnimatedPos([nextLat, nextLng]);
+        }
+      }
+      animFrame = requestAnimationFrame(animate);
+    };
+
+    animFrame = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(animFrame);
+  }, [animatedPos]);
+
+  const tileUrl = isDark
+    ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+    : "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png";
+
+  const allRobots = useMemo(() => {
+    if (robotsList && robotsList.length > 0) return robotsList;
+    if (robot) return [robot];
+    return [];
+  }, [robotsList, robot]);
+
+  // Default path coordinates for visualization
+  const routePolyline = useMemo<[number, number][]>(() => {
+    if (trail && trail.length > 1) return trail;
+    return waypoints.map(w => [w.lat, w.lng]);
+  }, [trail, waypoints]);
 
   return (
     <div
-      className={`relative rounded-xl overflow-hidden border border-surface-3 ${className}`}
+      className={`relative rounded-2xl overflow-hidden border border-surface-3 ${className}`}
       style={{ height, minHeight: height }}
     >
       <MapContainer
-        center={robotPos || CAMPUS_CENTER}
+        center={animatedPos || CAMPUS_CENTER}
         zoom={17}
         scrollWheelZoom={true}
-        style={{ height: "100%", width: "100%", background: isAther ? "#EBF6F0" : "#0A0A0A" }}
+        style={{ height: "100%", width: "100%", background: isDark ? "#0A0A0A" : "#EBF6F0" }}
       >
         <MapResizer />
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+          key={isDark ? "dark-map" : "light-map"}
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url={tileUrl}
           subdomains={["a", "b", "c", "d"]}
         />
 
+        {/* Route Polyline Trail */}
+        {routePolyline.length > 1 && (
+          <Polyline 
+            positions={routePolyline} 
+            pathOptions={{ 
+              color: isDark ? "#84E000" : "#4B9600", 
+              weight: 3.5, 
+              opacity: 0.7,
+              dashArray: "6, 8"
+            }} 
+          />
+        )}
+
+        {/* Waypoint Labels */}
         {waypoints.map((wp, i) => (
-          <Marker key={i} position={[wp.lat, wp.lng]} icon={blockIcon}>
-            <Popup>{wp.label}</Popup>
+          <Marker key={i} position={[wp.lat, wp.lng]} icon={blockIcon(wp.label)}>
+            <Popup>
+              <div className="font-bold text-caption text-[#0F172A]">
+                📍 Campus Building: {wp.label}
+              </div>
+            </Popup>
           </Marker>
         ))}
 
-        {trail && trail.length > 1 && (
-          <Polyline positions={trail} pathOptions={{ color: "#C6FF00", weight: 3, opacity: 0.6 }} />
-        )}
-
-        {robotPos && (
-          <>
-            <Marker position={robotPos} icon={robotIcon(robot?.heading ?? 0)}>
-              <Popup>DSR Robot — live position</Popup>
+        {/* Multiple Fleet Robots */}
+        {allRobots.map((r, idx) => {
+          const pos: [number, number] = (idx === 0 && animatedPos) ? animatedPos : [r.lat, r.lng];
+          return (
+            <Marker key={r.id || idx} position={pos} icon={robotIcon(r.heading ?? 45, true)}>
+              <Popup>
+                <div className="p-1 text-caption space-y-1">
+                  <p className="font-extrabold text-[#0F172A]">{r.name || `DSR Bot #${r.id || idx + 1}`}</p>
+                  <p className="text-micro font-bold text-gray-500 capitalize">Status: {r.status || "IDLE"}</p>
+                </div>
+              </Popup>
             </Marker>
-            <FollowRobot position={robotPos} follow={followRobot} />
-          </>
-        )}
+          );
+        })}
+
+        {animatedPos && <FollowRobot position={animatedPos} follow={followRobot} />}
       </MapContainer>
 
-      <div className="absolute top-2 right-2 z-[400] bg-surface-1/90 backdrop-blur px-2 py-1 rounded-md border border-surface-3 text-micro text-brand-gray/50 pointer-events-none">
-        Silver Oak University
+      <div className="absolute top-3 right-3 z-[400] bg-surface-1/90 backdrop-blur-md px-3 py-1.5 rounded-xl border border-surface-3 text-micro font-bold text-brand-white pointer-events-none shadow-md flex items-center space-x-2">
+        <span className="h-2 w-2 rounded-full bg-brand-lime animate-ping" />
+        <span>Silver Oak Live Campus Telemetry</span>
       </div>
     </div>
   );

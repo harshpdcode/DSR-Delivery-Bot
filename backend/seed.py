@@ -28,7 +28,7 @@ async def seed():
                 "full_name": "System Admin",
                 "password": "admin123",
                 "role": UserRole.ADMIN,
-                "phone": "+1234567890"
+                "phone": "+1234567891"
             },
             {
                 "email": "user",
@@ -42,7 +42,7 @@ async def seed():
                 "full_name": "Campus User",
                 "password": "user123",
                 "role": UserRole.USER,
-                "phone": "+1987654321"
+                "phone": "+1987654322"
             },
             {
                 "email": "operator@example.com",
@@ -70,7 +70,17 @@ async def seed():
         for user_data in users_to_seed:
             result = await session.execute(select(User).where(User.email == user_data["email"]))
             existing_user = result.scalars().first()
+            
+            # Also check phone collision
+            phone_result = await session.execute(select(User).where(User.phone == user_data["phone"]))
+            existing_phone = phone_result.scalars().first()
+
             if not existing_user:
+                # If phone is taken by a different user, use a fallback phone number
+                phone_num = user_data["phone"]
+                if existing_phone and existing_phone.email != user_data["email"]:
+                    phone_num = f"{user_data['phone']}_{user_data['email']}"
+
                 print(f"Creating demo user {user_data['email']} ({user_data['role']})...")
                 new_user = User(
                     email=user_data["email"],
@@ -79,7 +89,7 @@ async def seed():
                     role=user_data["role"],
                     is_active=True,
                     is_verified=True,
-                    phone=user_data["phone"]
+                    phone=phone_num
                 )
                 session.add(new_user)
             else:
@@ -87,6 +97,8 @@ async def seed():
                 existing_user.role = user_data["role"]
                 existing_user.is_active = True
                 existing_user.is_verified = True
+                if not existing_phone or existing_phone.email == user_data["email"]:
+                    existing_user.phone = user_data["phone"]
         
         await session.commit()
         print("Admin and User credentials seeded successfully!")
