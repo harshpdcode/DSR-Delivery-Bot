@@ -15,12 +15,13 @@ import {
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import dynamic from "next/dynamic";
+import FleetSpotlightCard from "@/components/FleetSpotlightCard";
 
 const CampusMap = dynamic(() => import("@/components/CampusMap"), {
   ssr: false,
   loading: () => (
     <div className="glassmorphism rounded-2xl border border-surface-4 p-4 h-[340px] flex items-center justify-center">
-      <span className="text-micro text-brand-gray/40">Loading campus interactive map…</span>
+      <span className="text-micro text-brand-white/50">Loading campus interactive map…</span>
     </div>
   ),
 });
@@ -33,7 +34,7 @@ function ErrorPanel({ message, onRetry }: { message: string; onRetry: () => void
       </div>
       <div className="text-center space-y-1">
         <p className="text-body font-bold text-brand-white">Connection Error</p>
-        <p className="text-caption text-brand-gray/50 max-w-xs">{message}</p>
+        <p className="text-caption text-brand-white/60 max-w-xs">{message}</p>
       </div>
       <button
         onClick={onRetry}
@@ -106,20 +107,23 @@ export default function DashboardOverview() {
     <div className="space-y-8 max-w-6xl mx-auto pb-16">
       
       {/* ── Welcome Header ────────────────────────────────── */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0">
-        <div>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div className="min-w-0 flex-1">
           <h1 className="text-display font-extrabold tracking-tight text-brand-white">Dashboard</h1>
-          <p className="text-body text-brand-gray/50">
+          <p className="text-caption sm:text-body text-brand-white/60 leading-normal font-medium">
             Real-time operations dashboard for Silver Oak campus.
           </p>
         </div>
         <Link
           href="/dashboard/delivery/new"
-          className="px-5 py-2.5 rounded-xl bg-brand-lime text-brand-black font-bold hover:shadow-glow-lime hover:scale-[1.02] transition-all text-body cursor-pointer"
+          className="shrink-0 px-5 py-2.5 rounded-xl bg-brand-lime text-brand-black font-bold hover:shadow-glow-lime hover:scale-[1.02] transition-all text-caption sm:text-body cursor-pointer whitespace-nowrap"
         >
           Request Robot Dispatch
         </Link>
       </div>
+
+      {/* ── Fleet Spotlight Hero — auto-advancing robot showcase ─────────── */}
+      <FleetSpotlightCard robots={robots} isLoading={loadingRobots} />
 
       {/* ── 2-Column Metrics Grid ──────────────────────────────────── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -127,14 +131,14 @@ export default function DashboardOverview() {
           <div key={idx} className="glassmorphism rounded-2xl p-6 border border-surface-4 shadow-card hover:border-brand-lime/20 transition-all">
             <div className="flex justify-between items-start">
               <div className="space-y-2">
-                <p className="text-caption font-bold text-brand-gray/50">{m.title}</p>
+                <p className="text-caption font-bold text-brand-white/60">{m.title}</p>
                 <p className="text-heading font-extrabold text-brand-white">{m.value}</p>
               </div>
               <div className={`p-3 rounded-xl ${m.color}`}>
                 <m.icon className="h-6 w-6" />
               </div>
             </div>
-            <p className="text-micro text-brand-gray/40 mt-4">{m.description}</p>
+            <p className="text-micro text-brand-white/50 mt-4">{m.description}</p>
           </div>
         ))}
       </div>
@@ -144,7 +148,7 @@ export default function DashboardOverview() {
         <div className="flex justify-between items-center mb-6">
           <div>
             <h3 className="text-title font-bold text-brand-white">My Deliveries</h3>
-            <p className="text-micro text-brand-gray/40 mt-0.5">Track &amp; manage your delivery requests</p>
+            <p className="text-caption text-brand-white/55 mt-0.5">Track &amp; manage your delivery requests</p>
           </div>
           <Link
             href="/dashboard/delivery/new"
@@ -166,12 +170,12 @@ export default function DashboardOverview() {
           />
         ) : recentDeliveries.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center py-16 text-center space-y-4">
-            <div className="p-4 rounded-2xl bg-surface-2 border border-surface-4 text-brand-gray/40">
+            <div className="p-4 rounded-2xl bg-surface-2 border border-surface-4 text-brand-white/40">
               <Package className="h-12 w-12" />
             </div>
             <div>
               <p className="text-body font-bold text-brand-white">No Deliveries Yet</p>
-              <p className="text-caption text-brand-gray/40 max-w-xs mt-1">
+              <p className="text-caption text-brand-white/60 max-w-xs mt-1">
                 You haven&apos;t made any deliveries yet. Tap &quot;+ New&quot; to request your first dispatch.
               </p>
             </div>
@@ -218,7 +222,7 @@ export default function DashboardOverview() {
                       </span>
                     </div>
 
-                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-caption text-brand-gray/50">
+                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-caption text-brand-white/55">
                       <div className="flex items-center space-x-1">
                         <MapPin className="h-4 w-4 text-brand-lime" />
                         <span>
@@ -256,7 +260,7 @@ export default function DashboardOverview() {
               <MapPin className="h-5 w-5 text-brand-lime" />
               <span>Silver Oak Campus Map</span>
             </h3>
-            <p className="text-micro text-brand-gray/40 mt-0.5">Real-time autonomous vehicle positioning &amp; building waypoints (A Block to E Block)</p>
+            <p className="text-caption text-brand-white/55 mt-0.5">Real-time autonomous vehicle positioning &amp; building waypoints (A Block to E Block)</p>
           </div>
           <span className="text-micro font-bold text-brand-lime px-2.5 py-1 rounded bg-brand-lime/10 border border-brand-lime/20">
             Live Telemetry

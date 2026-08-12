@@ -175,7 +175,7 @@ function AnalyticsContent() {
             <AlertTriangle className="h-5 w-5 text-status-error shrink-0" />
             <div>
               <p className="text-caption font-bold text-brand-white">Analytics Unavailable</p>
-              <p className="text-micro text-brand-gray/50">One or more data sources failed to load. Charts may show sample data.</p>
+              <p className="text-micro text-brand-white/60">One or more data sources failed to load. Charts may show sample data.</p>
             </div>
           </div>
           <button
@@ -192,7 +192,7 @@ function AnalyticsContent() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
         <div>
           <h1 className="text-display font-extrabold tracking-tight">Analytics Dashboard</h1>
-          <p className="text-body text-brand-gray/50">
+          <p className="text-body text-brand-white/60">
             Real-time insights on campus delivery dispatch times, load statistics, and fleet efficiency.
           </p>
         </div>
@@ -230,7 +230,7 @@ function AnalyticsContent() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <div className="glassmorphism rounded-2xl p-6 border border-surface-4/40 flex items-center justify-between hover:shadow-glow-lime/5 transition-all">
             <div className="space-y-2">
-              <span className="text-micro text-brand-gray/40 uppercase font-bold tracking-wider">Total Dispatch Runs</span>
+              <span className="text-micro text-brand-white/55 uppercase font-bold tracking-wider">Total Dispatch Runs</span>
               <p className="text-heading font-extrabold text-brand-white">
                 {overview?.total_deliveries || 0}
               </p>
@@ -246,11 +246,11 @@ function AnalyticsContent() {
 
           <div className="glassmorphism rounded-2xl p-6 border border-surface-4/40 flex items-center justify-between hover:shadow-glow-lime/5 transition-all">
             <div className="space-y-2">
-              <span className="text-micro text-brand-gray/40 uppercase font-bold tracking-wider">Active Missions</span>
+              <span className="text-micro text-brand-white/55 uppercase font-bold tracking-wider">Active Missions</span>
               <p className="text-heading font-extrabold text-brand-white">
                 {overview?.active_deliveries || 0}
               </p>
-              <span className="text-micro text-brand-gray/40">In-progress robots</span>
+              <span className="text-micro text-brand-white/55">In-progress robots</span>
             </div>
             <div className="p-3 rounded-xl bg-brand-yellow/10 border border-brand-yellow/20 text-brand-yellow">
               <Bot className="h-6 w-6" />
@@ -259,7 +259,7 @@ function AnalyticsContent() {
 
           <div className="glassmorphism rounded-2xl p-6 border border-surface-4/40 flex items-center justify-between hover:shadow-glow-lime/5 transition-all">
             <div className="space-y-2">
-              <span className="text-micro text-brand-gray/40 uppercase font-bold tracking-wider">Average Trip Duration</span>
+              <span className="text-micro text-brand-white/55 uppercase font-bold tracking-wider">Average Trip Duration</span>
               <p className="text-heading font-extrabold text-brand-white">
                 {overview?.avg_delivery_time_minutes || 0.0} <span className="text-caption font-semibold">min</span>
               </p>
@@ -272,7 +272,7 @@ function AnalyticsContent() {
 
           <div className="glassmorphism rounded-2xl p-6 border border-surface-4/40 flex items-center justify-between hover:shadow-glow-lime/5 transition-all">
             <div className="space-y-2">
-              <span className="text-micro text-brand-gray/40 uppercase font-bold tracking-wider">Mission Success Rate</span>
+              <span className="text-micro text-brand-white/55 uppercase font-bold tracking-wider">Mission Success Rate</span>
               <p className="text-heading font-extrabold text-brand-white">
                 {overview?.success_rate || 0}%
               </p>
@@ -292,7 +292,7 @@ function AnalyticsContent() {
           <div className="flex justify-between items-center">
             <div>
               <h3 className="text-title font-bold text-brand-white">Delivery Volume Trends</h3>
-              <p className="text-micro text-brand-gray/40 font-semibold">{getDayLabel(days)} Dispatch Activity</p>
+              <p className="text-micro text-brand-white/55 font-semibold">{getDayLabel(days)} Dispatch Activity</p>
             </div>
             <TrendingUp className="h-5 w-5 text-brand-lime" />
           </div>
@@ -325,7 +325,7 @@ function AnalyticsContent() {
           <div className="flex justify-between items-center">
             <div>
               <h3 className="text-title font-bold text-brand-white">Campus Heatmap Volume</h3>
-              <p className="text-micro text-brand-gray/40 font-semibold">Distribution Across Blocks</p>
+              <p className="text-micro text-brand-white/55 font-semibold">Distribution Across Blocks</p>
             </div>
             <MapPin className="h-5 w-5 text-brand-yellow" />
           </div>
@@ -360,7 +360,7 @@ function AnalyticsContent() {
               <div key={idx} className="flex items-center space-x-2 p-2 rounded bg-surface-1 border border-surface-3">
                 <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: COLORS[idx % COLORS.length] }} />
                 <span className="text-brand-white truncate flex-1">{item.block}</span>
-                <span className="text-brand-gray/40">{item.count}</span>
+                <span className="text-brand-white/55">{item.count}</span>
               </div>
             ))}
           </div>
@@ -375,7 +375,7 @@ function AnalyticsContent() {
           <div className="flex justify-between items-center">
             <div>
               <h3 className="text-title font-bold text-brand-white">Fleet Run Metrics</h3>
-              <p className="text-micro text-brand-gray/40 font-semibold">Individual Robot Dispatch Comparison</p>
+              <p className="text-micro text-brand-white/55 font-semibold">Individual Robot Dispatch Comparison</p>
             </div>
             <BarChart3 className="h-5 w-5 text-status-info" />
           </div>
@@ -409,7 +409,7 @@ function AnalyticsContent() {
                     {r.total_deliveries} runs
                   </span>
                 </div>
-                <div className="grid grid-cols-2 gap-4 pt-1.5 border-t border-surface-3 text-micro text-brand-gray/50">
+                <div className="grid grid-cols-2 gap-4 pt-1.5 border-t border-surface-3 text-micro text-brand-white/55">
                   <div>
                     <span>Avg Battery Usage:</span>
                     <span className="font-bold text-brand-white ml-1">{r.avg_battery_usage}%</span>

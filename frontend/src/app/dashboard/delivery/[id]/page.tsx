@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useAuthStore } from "@/store/authStore";
 import {
   Bot,
@@ -22,19 +22,15 @@ import {
   Clock,
   Copy,
   Check,
-  User,
-  Phone,
-  Mail,
   ShieldCheck,
   Navigation,
-  DoorOpen,
-  LockKeyhole
 } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
 import { getWsUrl } from "@/lib/ws";
-
 import dynamic from "next/dynamic";
+import DispatchButton from "@/components/DispatchButton";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 const CampusMap = dynamic(() => import("@/components/CampusMap"), {
   ssr: false,
@@ -119,7 +115,7 @@ function FlowStepper({ status, isPreloaded }: { status: string; isPreloaded: boo
 function AnimatedRobotAvatar({ status }: { status: string }) {
   const isMoving = status === "en_route" || status === "pickup_in_progress";
   const isArrived = status === "arrived" || status === "waiting_otp";
-  const isDone = status === "completed" || status === "otp_verified";
+  const isDone = status === "completed" || status === "otp_verified" || status === "compartment_open";
 
   const eyeColor = isDone ? "#10B981" : isArrived ? "#F59E0B" : isMoving ? "#C6FF00" : "#9CA3AF";
 
@@ -130,13 +126,10 @@ function AnimatedRobotAvatar({ status }: { status: string }) {
         <animate attributeName="r" values="22;30;22" dur="2s" repeatCount="indefinite" />
         <animate attributeName="opacity" values="0.15;0;0.15" dur="2s" repeatCount="indefinite" />
       </circle>
-
       {/* Main Body */}
       <rect x="-18" y="-12" width="36" height="28" rx="7" fill="#1F2433" stroke={eyeColor} strokeWidth="2" />
-
       {/* Face Screen */}
       <rect x="-13" y="-8" width="26" height="16" rx="4" fill="#0D0F17" stroke="#2A2D3A" strokeWidth="1" />
-
       {/* Eyes */}
       <circle cx="-6" cy="-1" r="3" fill={eyeColor}>
         {isMoving && <animate attributeName="opacity" values="1;0.3;1" dur="0.8s" repeatCount="indefinite" />}
@@ -144,13 +137,11 @@ function AnimatedRobotAvatar({ status }: { status: string }) {
       <circle cx="6" cy="-1" r="3" fill={eyeColor}>
         {isMoving && <animate attributeName="opacity" values="0.3;1;0.3" dur="0.8s" repeatCount="indefinite" />}
       </circle>
-
       {/* Antenna */}
       <line x1="0" y1="-12" x2="0" y2="-20" stroke="#3A3D4A" strokeWidth="2" strokeLinecap="round" />
       <circle cx="0" cy="-22" r="3" fill={eyeColor}>
         {isMoving && <animate attributeName="r" values="3;5;3" dur="1s" repeatCount="indefinite" />}
       </circle>
-
       {/* Wheels */}
       <ellipse cx="-12" cy="18" rx="6" ry="3" fill="#141720" stroke={eyeColor} strokeWidth="1" />
       <ellipse cx="12" cy="18" rx="6" ry="3" fill="#141720" stroke={eyeColor} strokeWidth="1" />
@@ -167,15 +158,19 @@ export default function TrackingPage() {
   const [robot, setRobot] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [socketConnected, setSocketConnected] = useState(false);
-  const [fetchingDone, setFetchingDone] = useState(false);
 
   // Single OTP State for Sender
   const [otpCode, setOtpCode] = useState<string | null>(null);
   const [loadingOtp, setLoadingOtp] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [isCompartmentOpen, setIsCompartmentOpen] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [etaText, setEtaText] = useState<string | null>(null);
+
+  // Ref for promisified start-mission modal confirmation
+  const startMissionPendingRef = useRef<{
+    resolve: () => void;
+    reject: (e: Error) => void;
+  } | null>(null);
 
   useEffect(() => {
     if (delivery?.status !== "en_route" || !delivery?.estimated_arrival) {
@@ -308,7 +303,7 @@ export default function TrackingPage() {
                 toast.success("🚨 ALERT: Robot arrived at destination! OTP generated.", { duration: 4000 });
                 generateOrFetchOtp();
               }
-              if (msg.status === "otp_verified" && !hasNotifiedUnlockedRef.current) {
+              if ((msg.status === "otp_verified" || msg.status === "compartment_open") && !hasNotifiedUnlockedRef.current) {
                 hasNotifiedUnlockedRef.current = true;
                 toast.success(`🔓 UNLOCKED! Collected by ${msg.receiver_name || "Receiver"}`, { duration: 4000 });
               }
@@ -357,37 +352,33 @@ export default function TrackingPage() {
     };
   }, [id, token]);
 
-  // Actions
-  const handleStartMission = async () => {
-    try {
-      const res = await fetch(`/api/v1/deliveries/${id}/start`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) throw new Error("Could not start mission");
-      toast.success("Mission started! Robot is now moving.");
-      fetchDeliveryDetails();
-    } catch (err: any) {
-      toast.error(err.message);
-    }
-  };
+  // ── Start Mission — promisified so DispatchButton phases track real state ──
+  const handleStartMissionDispatch = useCallback(async (): Promise<void> => {
+    // Step 1: Wait for modal confirmation (promise resolves on "Confirm & Start", rejects on Cancel)
+    await new Promise<void>((resolve, reject) => {
+      startMissionPendingRef.current = { resolve, reject };
+      setShowConfirmModal(true);
+    });
+    // Step 2: Actual API call (DispatchButton is now in dispatching phase)
+    const res = await fetch(`/api/v1/deliveries/${id}/start`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) throw new Error("Could not start mission");
+    toast.success("Mission started! Robot is now moving.");
+    fetchDeliveryDetails();
+  }, [id, token]);
 
-  const handleDoneFetching = async () => {
-    setFetchingDone(true);
-    try {
-      const res = await fetch(`/api/v1/deliveries/${id}/fetched`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) throw new Error("Could not confirm fetch");
-      toast.success("Parcel loaded! Robot is heading to destination. 🚀");
-      fetchDeliveryDetails();
-    } catch (err: any) {
-      toast.error(err.message);
-    } finally {
-      setFetchingDone(false);
-    }
-  };
+  // ── Done Fetching — returns Promise<void> for DispatchButton ──
+  const handleDoneFetching = useCallback(async (): Promise<void> => {
+    const res = await fetch(`/api/v1/deliveries/${id}/fetched`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) throw new Error("Could not confirm fetch");
+    toast.success("Parcel loaded! Robot is heading to destination. 🚀");
+    fetchDeliveryDetails();
+  }, [id, token]);
 
   const handleSimulateArrival = async () => {
     try {
@@ -437,16 +428,17 @@ export default function TrackingPage() {
 
   const isPickupPhase = delivery.status === "pickup_in_progress";
   const isArrivedPhase = ["arrived", "waiting_otp"].includes(delivery.status);
-  const isUnlocked = ["otp_verified", "completed"].includes(delivery.status);
+  // Item 3: include compartment_open in the unlocked check
+  const isUnlocked = ["otp_verified", "compartment_open", "completed"].includes(delivery.status);
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0">
-        <div className="space-y-1">
-          <div className="flex items-center space-x-2 flex-wrap gap-2">
-            <h1 className="text-heading font-extrabold tracking-tight">{delivery.tracking_code}</h1>
-            <span className={`text-caption font-bold px-2 py-0.5 rounded capitalize ${
+      {/* ── Header — Item 2: min-w-0 + shrink-0 guards against mobile overlap ── */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div className="min-w-0 space-y-1">
+          <div className="flex items-center flex-wrap gap-2">
+            <h1 className="text-heading font-extrabold tracking-tight truncate">{delivery.tracking_code}</h1>
+            <span className={`text-caption font-bold px-2 py-0.5 rounded capitalize shrink-0 ${
               delivery.status === "completed"
                 ? "bg-status-success/15 text-status-success border border-status-success/20"
                 : isPickupPhase
@@ -455,7 +447,7 @@ export default function TrackingPage() {
             }`}>
               {delivery.status.replace(/_/g, " ")}
             </span>
-            <span className={`text-micro font-bold px-2 py-0.5 rounded border ${
+            <span className={`text-micro font-bold px-2 py-0.5 rounded border shrink-0 ${
               delivery.is_preloaded
                 ? "text-status-info border-status-info/20 bg-status-info/10"
                 : "text-brand-lime border-brand-lime/20 bg-brand-lime/5"
@@ -463,12 +455,12 @@ export default function TrackingPage() {
               {delivery.is_preloaded ? "Pre-loaded" : "Fetch & Deliver"}
             </span>
           </div>
-          <p className="text-caption text-brand-gray/50">
+          <p className="text-caption text-brand-gray/50 truncate">
             Assigned Robot: <span className="text-brand-white font-bold">{robot?.name || "Assigning..."}</span>
           </p>
         </div>
 
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-3 shrink-0">
           <button
             onClick={fetchDeliveryDetails}
             className="p-2.5 rounded-lg bg-surface-2 hover:bg-surface-3 border border-surface-4 text-brand-gray hover:text-brand-lime transition-all"
@@ -492,35 +484,14 @@ export default function TrackingPage() {
         <FlowStepper status={delivery.status} isPreloaded={delivery.is_preloaded} />
       </div>
 
-      {/* Grid */}
+      {/* ── Grid ─────────────────────────────────────────────────────────────
+          Item 1: Right column comes FIRST in DOM so it stacks above the map
+          on mobile. xl: order-1/2 classes restore the left-map, right-intel layout. */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
 
-        {/* Left: Interactive Campus Map */}
-        <div className="xl:col-span-2 glassmorphism rounded-3xl border border-surface-4 p-5 flex flex-col space-y-4 relative overflow-hidden">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 px-1">
-            <div>
-              <h3 className="text-caption font-bold uppercase tracking-wider text-brand-gray/40">Campus Radar Map</h3>
-              <p className="text-micro text-brand-gray/60">Silver Oak University Live Fleet Telemetry</p>
-            </div>
-            <span className="text-micro font-mono text-brand-lime font-semibold shrink-0">
-              {robot?.lat && robot?.lng ? `${robot.lat.toFixed(4)}° N, ${robot.lng.toFixed(4)}° E` : "Silver Oak Campus"}
-            </span>
-          </div>
+        {/* ── RIGHT COLUMN: Mission Intel + Start Button + Action Controls ── */}
+        <div className="xl:col-span-1 xl:order-2 space-y-5">
 
-          <CampusMap
-            robot={
-              robot?.lat && robot?.lng
-                ? { lat: robot.lat, lng: robot.lng, heading: robot?.heading ?? 0 }
-                : undefined
-            }
-            followRobot={delivery.status === "en_route"}
-            height="400px"
-            className="w-full"
-          />
-        </div>
-
-        {/* Right: OTP Display / Audit & Controls */}
-        <div className="space-y-5">
           {/* Mission Intel */}
           <div className="glassmorphism rounded-3xl border border-surface-4 p-5 space-y-4">
             <div className="flex items-center justify-between">
@@ -596,6 +567,19 @@ export default function TrackingPage() {
             </div>
           </div>
 
+          {/* ── Item 1: Start Mission — compact DispatchButton, right-aligned,
+              placed DIRECTLY below Mission Intel and above the map on mobile.
+              No compartment toggle gating — Item 3 removes that entirely. ── */}
+          {delivery.status === "pending" && (
+            <div className="flex justify-end">
+              <DispatchButton
+                label={delivery.is_preloaded ? "Dispatch Robot" : "Start Mission"}
+                onConfirm={handleStartMissionDispatch}
+                className="px-6 py-2.5 text-caption"
+              />
+            </div>
+          )}
+
           {/* ── SINGLE CLEAN OTP DISPLAY FOR SENDER ── */}
           {isArrivedPhase && (
             <div className="glassmorphism rounded-3xl border-2 border-brand-lime p-5 space-y-4 text-center bg-brand-lime/5">
@@ -635,7 +619,7 @@ export default function TrackingPage() {
             <div className="glassmorphism rounded-3xl border border-status-success/30 bg-status-success/5 p-5 space-y-3">
               <div className="flex items-center space-x-2 text-status-success">
                 <CheckCircle2 className="h-5 w-5" />
-                <h4 className="font-extrabold text-title">Parcel Unlocked & Collected</h4>
+                <h4 className="font-extrabold text-title">Parcel Unlocked &amp; Collected</h4>
               </div>
               <div className="text-caption space-y-1.5 text-brand-gray/70 pt-1">
                 <p className="flex justify-between border-b border-surface-3/40 pb-1">
@@ -648,44 +632,20 @@ export default function TrackingPage() {
                 </p>
                 <p className="flex justify-between">
                   <span className="text-brand-gray/40">Status:</span>
-                  <span className="font-semibold text-brand-white">Hatch Opened & Completed</span>
+                  <span className="font-semibold text-brand-white">Hatch Opened &amp; Completed</span>
                 </p>
               </div>
             </div>
           )}
 
-          {/* Mission Action Buttons */}
+          {/* ── Mission Action Buttons ──
+              Item 3: Compartment toggle block entirely removed.
+              Item 1: Pending Start button moved above (DispatchButton above Mission Intel).
+              Remaining: pickup phase instruction + Done Fetching DispatchButton,
+              en_route Simulate Arrival, Back to Dashboard. ── */}
           <div className="glassmorphism rounded-3xl border border-surface-4 p-5 space-y-4">
-            {/* Compartment Toggle */}
-            {["pending", "pickup_in_progress", "en_route"].includes(delivery.status) && (
-              <div className="p-3.5 rounded-2xl bg-surface-1 border border-surface-3 flex items-center justify-between">
-                <div className="flex items-center space-x-2.5">
-                  <div className={`p-2 rounded-xl border ${isCompartmentOpen ? "bg-status-warning/20 border-status-warning text-status-warning" : "bg-brand-lime/20 border-brand-lime text-brand-lime"}`}>
-                    {isCompartmentOpen ? <DoorOpen className="h-5 w-5" /> : <LockKeyhole className="h-5 w-5" />}
-                  </div>
-                  <div>
-                    <span className="text-caption font-bold text-brand-white block">Robot Compartment</span>
-                    <span className={`text-micro font-semibold ${isCompartmentOpen ? "text-status-warning" : "text-brand-lime"}`}>
-                      {isCompartmentOpen ? "Status: Open (Loading)" : "Status: Closed & Locked"}
-                    </span>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setIsCompartmentOpen(!isCompartmentOpen)}
-                  className={`px-3.5 py-2 rounded-xl text-caption font-bold border transition-all ${
-                    isCompartmentOpen
-                      ? "bg-brand-lime text-brand-black border-brand-lime hover:shadow-glow-lime"
-                      : "bg-surface-2 text-brand-white border-surface-4 hover:border-brand-lime/50"
-                  }`}
-                  aria-label={isCompartmentOpen ? "Close Compartment" : "Open Compartment"}
-                >
-                  {isCompartmentOpen ? "Close Compartment" : "Open Compartment"}
-                </button>
-              </div>
-            )}
 
-            {/* Pickup Phase Instruction & Dispatch Card (Placed Below Compartment) */}
+            {/* Pickup Phase Instruction & Done Fetching DispatchButton */}
             {isPickupPhase && (
               <div className="ather-banner-yellow p-4 rounded-2xl space-y-3 shadow-md">
                 <div className="flex items-start space-x-3">
@@ -701,39 +661,11 @@ export default function TrackingPage() {
                     </p>
                   </div>
                 </div>
-                <button
-                  onClick={handleDoneFetching}
-                  disabled={fetchingDone}
-                  className="w-full py-3 rounded-xl bg-[#0F172A] text-white font-extrabold hover:bg-black transition-all flex items-center justify-center space-x-2 disabled:opacity-60 cursor-pointer shadow-sm"
-                >
-                  {fetchingDone ? <Loader2 className="h-5 w-5 animate-spin text-[#84E000]" /> : <ArrowRight className="h-5 w-5 text-[#84E000]" />}
-                  <span>{fetchingDone ? "Dispatching..." : "Done Fetching — Dispatch to Destination 🚀"}</span>
-                </button>
-              </div>
-            )}
-
-            {delivery.status === "pending" && (
-              <div className="space-y-1.5">
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (isCompartmentOpen) {
-                      toast.warning("Close the compartment before starting the trip!");
-                      return;
-                    }
-                    handleStartMission();
-                  }}
-                  disabled={isCompartmentOpen}
-                  className="w-full py-3 rounded-xl bg-brand-lime text-brand-black font-extrabold hover:shadow-glow-lime transition-all flex items-center justify-center space-x-2 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:shadow-none cursor-pointer"
-                >
-                  <Play className="h-5 w-5 fill-current" />
-                  <span>{delivery.is_preloaded ? "Dispatch Robot" : "Start Mission — Send Robot to Origin"}</span>
-                </button>
-                {isCompartmentOpen && (
-                  <p className="text-micro text-status-warning text-center font-medium">
-                    Close the compartment before starting the trip
-                  </p>
-                )}
+                <DispatchButton
+                  label="Done Fetching — Dispatch to Destination 🚀"
+                  onConfirm={handleDoneFetching}
+                  className="w-full justify-center"
+                />
               </div>
             )}
 
@@ -755,7 +687,53 @@ export default function TrackingPage() {
             </Link>
           </div>
         </div>
+
+        {/* ── LEFT COLUMN: Campus Radar Map ──
+            xl:order-1 makes it appear visually first on wide screens,
+            but it's second in DOM so mobile stacks right-col (mission intel)
+            above map — exactly what Sanjay asked for. ── */}
+        <div className="xl:col-span-2 xl:order-1 glassmorphism rounded-3xl border border-surface-4 p-5 flex flex-col space-y-4 relative overflow-hidden">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 px-1">
+            <div>
+              <h3 className="text-caption font-bold uppercase tracking-wider text-brand-gray/40">Campus Radar Map</h3>
+              <p className="text-micro text-brand-gray/60">Silver Oak University Live Fleet Telemetry</p>
+            </div>
+            <span className="text-micro font-mono text-brand-lime font-semibold shrink-0">
+              {robot?.lat && robot?.lng ? `${robot.lat.toFixed(4)}° N, ${robot.lng.toFixed(4)}° E` : "Silver Oak Campus"}
+            </span>
+          </div>
+
+          <CampusMap
+            robot={
+              robot?.lat && robot?.lng
+                ? { lat: robot.lat, lng: robot.lng, heading: robot?.heading ?? 0 }
+                : undefined
+            }
+            followRobot={delivery.status === "en_route"}
+            height="400px"
+            className="w-full"
+          />
+        </div>
       </div>
+
+      {/* ── Item 4: Confirm Dialog — wired to Start Mission DispatchButton ── */}
+      <ConfirmDialog
+        open={showConfirmModal}
+        title="Start Delivery Trip?"
+        message="The robot will begin its route to the origin block once confirmed. This action cannot be undone."
+        confirmLabel="Confirm & Start"
+        cancelLabel="Cancel"
+        onConfirm={() => {
+          setShowConfirmModal(false);
+          startMissionPendingRef.current?.resolve();
+          startMissionPendingRef.current = null;
+        }}
+        onCancel={() => {
+          setShowConfirmModal(false);
+          startMissionPendingRef.current?.reject(new Error("CANCELLED"));
+          startMissionPendingRef.current = null;
+        }}
+      />
     </div>
   );
 }

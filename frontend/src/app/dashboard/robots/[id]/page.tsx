@@ -213,10 +213,10 @@ export default function RobotDetailsPage() {
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <div>
-          <span className="text-micro text-brand-gray/40 font-bold uppercase tracking-wider">Fleet / Diagnostics</span>
+          <span className="text-micro text-brand-white/55 font-bold uppercase tracking-wider">Fleet / Diagnostics</span>
           <h1 className="text-heading font-extrabold tracking-tight flex items-center space-x-2">
             <span>{robot.name}</span>
-            <span className="text-caption text-brand-gray/40 font-mono font-medium">({robot.serial_number})</span>
+            <span className="text-caption text-brand-white/55 font-mono font-medium">({robot.serial_number})</span>
           </h1>
         </div>
       </div>
@@ -228,7 +228,7 @@ export default function RobotDetailsPage() {
             <Bot className="h-6 w-6" />
           </div>
           <div>
-            <span className="text-micro text-brand-gray/40 uppercase font-bold tracking-wider">Operational Status</span>
+            <span className="text-micro text-brand-white/55 uppercase font-bold tracking-wider">Operational Status</span>
             <p className="text-body font-bold text-brand-white capitalize mt-1 flex items-center space-x-1.5">
               <span className={`inline-block h-2.5 w-2.5 rounded-full ${robot.status === 'idle' ? 'bg-brand-lime' : robot.status === 'maintenance' ? 'bg-status-error' : 'bg-brand-yellow'}`} />
               <span>{robot.status.replace("_", " ")}</span>
@@ -241,10 +241,10 @@ export default function RobotDetailsPage() {
             <Battery className="h-6 w-6" />
           </div>
           <div className="flex-1 min-w-0">
-            <span className="text-micro text-brand-gray/40 uppercase font-bold tracking-wider">Battery Level</span>
+            <span className="text-micro text-brand-white/55 uppercase font-bold tracking-wider">Battery Level</span>
             <div className="flex items-center justify-between mt-1">
               <span className="text-body font-bold text-brand-white">{robot.battery_level}%</span>
-              <span className="text-micro text-brand-gray/40">{robot.status === "charging" ? "Charging" : "Discharging"}</span>
+              <span className="text-micro text-brand-white/55">{robot.status === "charging" ? "Charging" : "Discharging"}</span>
             </div>
             <div className="w-full bg-surface-3 h-1.5 rounded-full overflow-hidden mt-1.5">
               <div 
@@ -260,9 +260,9 @@ export default function RobotDetailsPage() {
             <Gauge className="h-6 w-6" />
           </div>
           <div>
-            <span className="text-micro text-brand-gray/40 uppercase font-bold tracking-wider">Velocity & Heading</span>
+            <span className="text-micro text-brand-white/55 uppercase font-bold tracking-wider">Velocity & Heading</span>
             <p className="text-body font-bold text-brand-white mt-1">
-              {robot.speed || 0.0} m/s <span className="text-caption text-brand-gray/40 font-normal">at {robot.heading || 0}&deg;</span>
+              {robot.speed || 0.0} m/s <span className="text-caption text-brand-white/55 font-normal">at {robot.heading || 0}&deg;</span>
             </p>
           </div>
         </div>
@@ -272,7 +272,7 @@ export default function RobotDetailsPage() {
             <ShieldCheck className="h-6 w-6" />
           </div>
           <div>
-            <span className="text-micro text-brand-gray/40 uppercase font-bold tracking-wider">Hardware Integrity</span>
+            <span className="text-micro text-brand-white/55 uppercase font-bold tracking-wider">Hardware Integrity</span>
             <p className="text-body font-bold text-brand-white mt-1">
               {robot.error_message ? (
                 <span className="text-status-error flex items-center space-x-1">
@@ -301,29 +301,29 @@ export default function RobotDetailsPage() {
             
             <div className="space-y-4 text-caption">
               <div className="flex justify-between items-center py-2 border-b border-surface-4/40">
-                <span className="text-brand-gray/40">Chassis Model</span>
+                <span className="text-brand-white/55">Chassis Model</span>
                 <span className="font-bold text-brand-white">{robot.model_type}</span>
               </div>
               <div className="flex justify-between items-center py-2 border-b border-surface-4/40">
-                <span className="text-brand-gray/40">Serial Key</span>
+                <span className="text-brand-white/55">Serial Key</span>
                 <span className="font-mono text-brand-white font-semibold">{robot.serial_number}</span>
               </div>
               <div className="flex justify-between items-center py-2 border-b border-surface-4/40">
-                <span className="text-brand-gray/40">Firmware Build</span>
+                <span className="text-brand-white/55">Firmware Build</span>
                 <span className="font-mono text-brand-white font-semibold">v{robot.firmware_version}</span>
               </div>
               <div className="flex justify-between items-center py-2 border-b border-surface-4/40">
-                <span className="text-brand-gray/40">Payload Limit</span>
+                <span className="text-brand-white/55">Payload Limit</span>
                 <span className="font-bold text-brand-white">{robot.payload_capacity_kg} kg</span>
               </div>
               <div className="flex justify-between items-center py-2 border-b border-surface-4/40">
-                <span className="text-brand-gray/40">Last Maintenance</span>
+                <span className="text-brand-white/55">Last Maintenance</span>
                 <span className="font-bold text-brand-white">
                   {robot.last_maintenance ? new Date(robot.last_maintenance).toLocaleDateString() : "Never"}
                 </span>
               </div>
               <div className="flex justify-between items-center py-2">
-                <span className="text-brand-gray/40">Uptime State</span>
+                <span className="text-brand-white/55">Uptime State</span>
                 <span className="text-status-success font-semibold flex items-center space-x-1">
                   <Activity className="h-3.5 w-3.5" />
                   <span>99.98% Available</span>
@@ -350,7 +350,7 @@ export default function RobotDetailsPage() {
 
               <form onSubmit={handleManualSubmit} className="space-y-4">
                 <div className="space-y-1.5">
-                  <label className="text-caption text-brand-gray/40 font-bold block">Status Override</label>
+                  <label className="text-caption text-brand-white/60 font-bold block">Status Override</label>
                   <select
                     value={overrideStatus}
                     onChange={(e) => setOverrideStatus(e.target.value)}
@@ -365,7 +365,7 @@ export default function RobotDetailsPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-caption text-brand-gray/40 font-bold block">Battery Capacity (%)</label>
+                  <label className="text-caption text-brand-white/60 font-bold block">Battery Capacity (%)</label>
                   <input
                     type="number"
                     min="0"
@@ -378,7 +378,7 @@ export default function RobotDetailsPage() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-caption text-brand-gray/40 font-bold block">Grid Lat (X)</label>
+                    <label className="text-caption text-brand-white/60 font-bold block">Grid Lat (X)</label>
                     <input
                       type="number"
                       step="any"
@@ -388,7 +388,7 @@ export default function RobotDetailsPage() {
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-caption text-brand-gray/40 font-bold block">Grid Lng (Y)</label>
+                    <label className="text-caption text-brand-white/60 font-bold block">Grid Lng (Y)</label>
                     <input
                       type="number"
                       step="any"
@@ -400,7 +400,7 @@ export default function RobotDetailsPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-caption text-brand-gray/40 font-bold block">Report Fault Message</label>
+                  <label className="text-caption text-brand-white/60 font-bold block">Report Fault Message</label>
                   <input
                     type="text"
                     placeholder="Enter diagnostic fault code or leave blank"

@@ -156,7 +156,7 @@ function UserManagementContent() {
         </form>
 
         <div className="flex items-center space-x-4 w-full md:w-auto">
-          <label className="text-caption font-semibold text-brand-gray/60 whitespace-nowrap">
+          <label className="text-caption font-semibold text-brand-white/60 whitespace-nowrap">
             {"Filter Role:"}
           </label>
           <select
@@ -187,7 +187,7 @@ function UserManagementContent() {
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-surface-2/60 border-b border-surface-4 text-micro font-extrabold uppercase tracking-wider text-brand-gray/60">
+                <tr className="bg-surface-2/60 border-b border-surface-4 text-micro font-extrabold uppercase tracking-wider text-brand-white/60">
                   <th className="py-4 px-6">{"User Profile"}</th>
                   <th className="py-4 px-6">{"Contact Phone"}</th>
                   <th className="py-4 px-6">{"Current Role"}</th>
@@ -222,13 +222,13 @@ function UserManagementContent() {
                                 </span>
                               )}
                             </div>
-                            <span className="text-micro text-brand-gray/50 block">{u.email}</span>
+                            <span className="text-micro text-brand-white/60 block">{u.email}</span>
                           </div>
                         </div>
                       </td>
 
                       {/* Phone */}
-                      <td className="py-4 px-6 text-brand-gray/70">
+                      <td className="py-4 px-6 text-brand-white/70">
                         {u.phone || "N/A"}
                       </td>
 

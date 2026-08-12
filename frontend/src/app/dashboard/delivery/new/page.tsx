@@ -8,6 +8,7 @@ import { useAuthStore } from "@/store/authStore";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import LiquidPillTabs from "@/components/LiquidPillTabs";
 import {
   Bot,
   MapPin,
@@ -60,6 +61,7 @@ export default function NewDeliveryPage() {
   const [tripMode, setTripMode] = useState<"single" | "multi">("single");
   const [multiStops, setMultiStops] = useState<string[]>(["B Block", "C Block"]);
   const [bookingFor, setBookingFor] = useState<"myself" | "someone_else">("myself");
+  const [deliveryPriority, setDeliveryPriority] = useState<"normal" | "high">("normal");
 
   // Fetch all fleet robots
   const {
@@ -539,7 +541,7 @@ export default function NewDeliveryPage() {
                           if (isIdle) {
                             setValue("robot_id", robot.id, { shouldValidate: true });
                           } else {
-                            toast.info(`${robot.name} is currently ${robot.status.replace("_", " ")}.`);
+                            toast.info(`${robot.name} is currently ${robot.status.replace(/_/g, " ")}.`);
                           }
                         }}
                         className={`ather-card ather-card-hover p-5 cursor-pointer border-2 transition-all flex flex-col justify-between space-y-4 ${
@@ -619,30 +621,17 @@ export default function NewDeliveryPage() {
                 </p>
               </div>
 
-              {/* Booking For Toggle */}
-              <div className="p-1 rounded-2xl bg-[#F6F6F4] flex items-center space-x-1">
-                <button
-                  type="button"
-                  onClick={() => setBookingFor("myself")}
-                  className={`flex-1 py-2 rounded-xl text-caption font-extrabold transition-all ${
-                    bookingFor === "myself"
-                      ? "bg-white text-[#0F172A] shadow-xs"
-                      : "text-[#64748B]"
-                  }`}
-                >
-                  Booking For: Myself
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setBookingFor("someone_else")}
-                  className={`flex-1 py-2 rounded-xl text-caption font-extrabold transition-all ${
-                    bookingFor === "someone_else"
-                      ? "bg-white text-[#0F172A] shadow-xs"
-                      : "text-[#64748B]"
-                  }`}
-                >
-                  Someone Else
-                </button>
+              {/* Booking For Toggle — LiquidPillTabs */}
+              <div className="space-y-1.5">
+                <label className="text-micro font-bold uppercase tracking-wider text-[#64748B]">Booking For</label>
+                <LiquidPillTabs
+                  options={[
+                    { value: "myself", label: "Myself" },
+                    { value: "someone_else", label: "Someone Else" },
+                  ]}
+                  value={bookingFor}
+                  onChange={(v) => setBookingFor(v as "myself" | "someone_else")}
+                />
               </div>
 
               {bookingFor === "someone_else" && (
@@ -695,13 +684,17 @@ export default function NewDeliveryPage() {
 
                   <div className="space-y-2">
                     <label className="text-caption font-bold text-[#0F172A]">Delivery Priority</label>
-                    <select
-                      {...register("priority")}
-                      className="w-full bg-[#F6F6F4] border border-[#E4E4E0] focus:border-[#84E000] outline-none rounded-2xl py-3 px-4 text-body font-bold text-[#0F172A]"
-                    >
-                      <option value="normal">Normal (Standard Speed)</option>
-                      <option value="high">High (Urgent Dispatch)</option>
-                    </select>
+                    <LiquidPillTabs
+                      options={[
+                        { value: "normal", label: "Normal" },
+                        { value: "high", label: "High Priority" },
+                      ]}
+                      value={deliveryPriority}
+                      onChange={(v) => {
+                        setDeliveryPriority(v as "normal" | "high");
+                        setValue("priority", v as "normal" | "high");
+                      }}
+                    />
                   </div>
                 </div>
               </div>

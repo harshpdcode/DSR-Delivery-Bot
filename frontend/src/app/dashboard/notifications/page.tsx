@@ -251,7 +251,7 @@ export default function NotificationsPage() {
               </span>
             )}
           </div>
-          <p className="text-body text-brand-gray/50 mt-1">
+          <p className="text-body text-brand-white/60 mt-1">
             Monitor real-time system alerts, delivery completions, and security warnings.
           </p>
         </div>
@@ -283,7 +283,7 @@ export default function NotificationsPage() {
             <Bell className="h-8 w-8" />
           </div>
           <h3 className="text-title font-bold">All caught up!</h3>
-          <p className="text-caption text-brand-gray/50 max-w-sm mx-auto">
+          <p className="text-caption text-brand-white/60 max-w-sm mx-auto">
             You have no pending notification alerts. Real-time updates will automatically appear here as they occur.
           </p>
         </div>
@@ -310,10 +310,10 @@ export default function NotificationsPage() {
                       <span className="h-2 w-2 rounded-full bg-brand-lime ring-2 ring-brand-lime/20" />
                     )}
                   </div>
-                  <p className="text-caption text-brand-gray/60 leading-relaxed">
+                  <p className="text-caption text-brand-white/70 leading-relaxed">
                     {item.body}
                   </p>
-                  <div className="flex items-center space-x-1.5 pt-1 text-micro text-brand-gray/40">
+                  <div className="flex items-center space-x-1.5 pt-1 text-micro text-brand-white/50">
                     <Clock className="h-3.5 w-3.5" />
                     <span>
                       {item.timestamp.toLocaleDateString()} at {item.timestamp.toLocaleTimeString()}

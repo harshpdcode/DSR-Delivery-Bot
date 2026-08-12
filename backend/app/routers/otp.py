@@ -158,18 +158,30 @@ async def verify_delivery_otp(
             attempts_remaining=remaining,
         )
 
-    # OTP verified — unlock compartment
+    # OTP verified — transition: OTP_VERIFIED → COMPARTMENT_OPEN (physical unlock)
     delivery.status = DeliveryStatus.OTP_VERIFIED
     delivery.receiver_id = current_user.id
 
-    # Add audit log in history
-    history = DeliveryHistory(
+    # Add audit log: OTP_VERIFIED
+    history_verified = DeliveryHistory(
         delivery_id=delivery.id,
         status=DeliveryStatus.OTP_VERIFIED.value,
-        note=f"Compartment unlocked by Receiver: {current_user.full_name} ({current_user.email})",
+        note=f"OTP verified by Receiver: {current_user.full_name} ({current_user.email})",
         changed_by=current_user.id,
     )
-    db.add(history)
+    db.add(history_verified)
+
+    # Immediately transition to COMPARTMENT_OPEN (hatch physically opens)
+    delivery.status = DeliveryStatus.COMPARTMENT_OPEN
+
+    # Add audit log: COMPARTMENT_OPEN
+    history_open = DeliveryHistory(
+        delivery_id=delivery.id,
+        status=DeliveryStatus.COMPARTMENT_OPEN.value,
+        note=f"Compartment physically opened for {current_user.full_name} ({current_user.email})",
+        changed_by=current_user.id,
+    )
+    db.add(history_open)
 
     # Update OTP log
     otp_logs = await db.execute(
@@ -185,14 +197,14 @@ async def verify_delivery_otp(
 
     await db.flush()
 
-    # Broadcast status change via WebSocket
+    # Broadcast COMPARTMENT_OPEN status via WebSocket
     try:
         from app.routers.tracking import manager
         await manager.broadcast(
             delivery.id,
             {
                 "type": "status_change",
-                "status": DeliveryStatus.OTP_VERIFIED.value,
+                "status": DeliveryStatus.COMPARTMENT_OPEN.value,
                 "receiver_name": current_user.full_name,
                 "receiver_email": current_user.email,
             },
@@ -202,7 +214,7 @@ async def verify_delivery_otp(
 
     return OTPResponse(
         success=True,
-        message=f"OTP verified by {current_user.full_name}! Compartment unlocked.",
+        message=f"OTP verified by {current_user.full_name}! Compartment is now open.",
         attempts_remaining=None,
     )
 

@@ -26,7 +26,7 @@ router = APIRouter(prefix="/robots", tags=["Robots"])
 
 @router.get("", response_model=List[RobotResponse])
 async def list_robots(
-    status_filter: str = None,
+    status_filter: str | None = None,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -234,6 +234,35 @@ async def toggle_robot_status(
         robot.error_message = None
     else:
         robot.status = RobotStatus.OFFLINE
+
+    await db.flush()
+    await db.refresh(robot)
+    return robot
+
+
+@router.post("/{robot_id}/make-available", response_model=RobotResponse)
+async def make_robot_available(
+    robot_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(
+        require_role(UserRole.ADMIN, UserRole.OPERATOR)
+    ),
+):
+    """Force-reset a robot to IDLE / available state (Admin/Operator only).
+
+    Intended for testing and unblocking robots stuck in a non-idle status.
+    Clears any error message and sets battery to 100% to guarantee usability.
+    """
+    result = await db.execute(
+        select(Robot).where(Robot.id == robot_id, Robot.deleted_at.is_(None))
+    )
+    robot = result.scalar_one_or_none()
+    if not robot:
+        raise HTTPException(status_code=404, detail="Robot not found")
+
+    robot.status = RobotStatus.IDLE
+    robot.error_message = None
+    robot.battery_level = 100.0
 
     await db.flush()
     await db.refresh(robot)

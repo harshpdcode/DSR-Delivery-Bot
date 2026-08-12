@@ -2,8 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/store/authStore";
-import { Bot, RefreshCw, Battery, Compass, WifiOff, Power, MapPin, Zap } from "lucide-react";
-import Link from "next/link";
+import { Bot, RefreshCw, Battery, WifiOff, MapPin, Zap } from "lucide-react";
 import { toast } from "sonner";
 import RoleGuard from "@/components/RoleGuard";
 import dynamic from "next/dynamic";
@@ -12,7 +11,7 @@ const CampusMap = dynamic(() => import("@/components/CampusMap"), {
   ssr: false,
   loading: () => (
     <div className="glassmorphism rounded-2xl border border-surface-4 p-4 h-[340px] flex items-center justify-center">
-      <span className="text-micro text-brand-gray/40">Loading campus fleet map...</span>
+      <span className="text-micro text-brand-white/50">Loading campus fleet map...</span>
     </div>
   ),
 });
@@ -25,7 +24,7 @@ function ErrorPanel({ message, onRetry }: { message: string; onRetry: () => void
       </div>
       <div className="text-center space-y-1">
         <p className="text-body font-bold text-brand-white">Backend Unreachable</p>
-        <p className="text-caption text-brand-gray/50 max-w-xs">{message}</p>
+        <p className="text-caption text-brand-white/60 max-w-xs">{message}</p>
       </div>
       <button
         onClick={onRetry}
@@ -39,7 +38,7 @@ function ErrorPanel({ message, onRetry }: { message: string; onRetry: () => void
 }
 
 function FleetContent() {
-  const { token, user } = useAuthStore();
+  const { token } = useAuthStore();
   const queryClient = useQueryClient();
 
   const { data: robots = [], isLoading, isError, refetch } = useQuery({
@@ -55,22 +54,21 @@ function FleetContent() {
     retry: 1,
   });
 
-  const toggleMutation = useMutation({
+  // ── Make Available mutation (Admin testing tool) ──────────────────────────
+  const makeAvailableMutation = useMutation({
     mutationFn: async (robotId: number) => {
-      const res = await fetch(`/api/v1/robots/${robotId}/toggle-status`, {
+      const res = await fetch(`/api/v1/robots/${robotId}/make-available`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) {
-        const err = await res.json().catch(() => ({ detail: "Toggle failed" }));
-        throw new Error(err.detail || "Toggle failed");
+        const err = await res.json().catch(() => ({ detail: "Failed" }));
+        throw new Error(err.detail || "Could not reset robot");
       }
       return res.json();
     },
     onSuccess: (updated: any) => {
-      toast.success(
-        `${updated.name} is now ${updated.status === "offline" ? "INACTIVE 🔴" : "ACTIVE 🟢"}`
-      );
+      toast.success(`✅ ${updated.name} is now IDLE & ready (battery reset to 100%)`);
       queryClient.invalidateQueries({ queryKey: ["robots"] });
     },
     onError: (err: Error) => {
@@ -89,22 +87,19 @@ function FleetContent() {
       case "maintenance":
         return "text-white bg-red-600";
       case "offline":
-        return "text-brand-gray/60 bg-surface-3";
+        return "text-brand-white/70 bg-surface-3";
       default:
-        return "text-brand-gray/60 bg-surface-3";
+        return "text-brand-white/70 bg-surface-3";
     }
   };
-
-  const isActivelyBusy = (status: string) =>
-    ["en_route", "delivering", "returning"].includes(status);
 
   return (
     <div className="space-y-8 max-w-5xl mx-auto pb-16">
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0">
-        <div>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div className="min-w-0">
           <h1 className="text-display font-extrabold tracking-tight text-brand-white">Fleet Management</h1>
-          <p className="text-body text-brand-gray/60 font-medium">
+          <p className="text-body text-brand-white/60 font-medium">
             Monitor telemetry, battery logs, and real-time campus locations for all active delivery units.
           </p>
         </div>
@@ -113,7 +108,7 @@ function FleetContent() {
             refetch();
             toast.success("Fleet status updated");
           }}
-          className="p-3 rounded-xl bg-surface-2 border border-surface-3 hover:bg-brand-lime hover:text-brand-black text-brand-white shadow-xs transition-all flex items-center space-x-2 text-caption font-bold"
+          className="shrink-0 p-3 rounded-xl bg-surface-2 border border-surface-3 hover:bg-brand-lime hover:text-brand-black text-brand-white shadow-xs transition-all flex items-center space-x-2 text-caption font-bold"
         >
           <RefreshCw className="h-4 w-4" />
           <span>Sync Fleet</span>
@@ -128,7 +123,7 @@ function FleetContent() {
               <MapPin className="h-5 w-5 text-brand-lime" />
               <span>Campus Fleet Live Radar Map</span>
             </h3>
-            <p className="text-micro text-brand-gray/60 mt-0.5">Real-time GPS coordinates and route telemetry across campus buildings</p>
+            <p className="text-caption text-brand-white/60 mt-0.5">Real-time GPS coordinates and route telemetry across campus buildings</p>
           </div>
           <span className="text-micro font-bold text-brand-lime px-2.5 py-1 rounded bg-brand-lime/10 border border-brand-lime/20">
             {robots.length} Units Active
@@ -162,9 +157,9 @@ function FleetContent() {
         />
       ) : robots.length === 0 ? (
         <div className="text-center py-16 glassmorphism rounded-3xl border border-surface-4 shadow-sm space-y-4">
-          <Bot className="h-12 w-12 text-brand-gray/40 mx-auto" />
+          <Bot className="h-12 w-12 text-brand-white/40 mx-auto" />
           <p className="text-body font-bold text-brand-white">No Robots Configured</p>
-          <p className="text-caption text-brand-gray/60 max-w-sm mx-auto">
+          <p className="text-caption text-brand-white/60 max-w-sm mx-auto">
             Please seed or register autonomous robot vehicles in the database to manage the fleet.
           </p>
         </div>
@@ -172,12 +167,12 @@ function FleetContent() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {robots.map((robot: any) => {
             const isOffline = robot.status === "offline";
-            const isBusy = isActivelyBusy(robot.status);
+            const isAlreadyIdle = robot.status === "idle";
 
             return (
               <div
                 key={robot.id}
-                className={`glassmorphism rounded-3xl border border-surface-4 p-6 flex flex-col justify-between space-y-6 ${
+                className={`glassmorphism rounded-3xl border border-surface-4 p-6 flex flex-col space-y-5 ${
                   isOffline ? "opacity-75" : ""
                 }`}
               >
@@ -191,17 +186,17 @@ function FleetContent() {
                       </div>
                       <div>
                         <h4 className="text-body font-bold text-brand-white">{robot.name}</h4>
-                        <p className="text-micro font-medium text-brand-gray/60">ID: DSR-0{robot.id}</p>
+                        <p className="text-micro font-medium text-brand-white/60">ID: DSR-0{robot.id}</p>
                       </div>
                     </div>
                     <span className={`text-micro font-extrabold px-2.5 py-1 rounded-full uppercase ${getStatusColor(robot.status)}`}>
-                      {robot.status.replace("_", " ")}
+                      {robot.status.replace(/_/g, " ")}
                     </span>
                   </div>
 
                   {/* Battery Status */}
                   <div className="space-y-2">
-                    <div className="flex justify-between items-center text-caption font-bold text-brand-gray/60">
+                    <div className="flex justify-between items-center text-caption font-bold text-brand-white/60">
                       <span className="flex items-center space-x-1">
                         <Battery className="h-4 w-4 text-brand-lime" />
                         <span>Battery Charge</span>
@@ -210,40 +205,48 @@ function FleetContent() {
                     </div>
                     <div className="w-full bg-surface-3 h-2 rounded-full overflow-hidden">
                       <div
-                        className="h-full rounded-full bg-brand-lime"
+                        className={`h-full rounded-full transition-all ${
+                          robot.battery_level >= 60
+                            ? "bg-brand-lime"
+                            : robot.battery_level >= 25
+                            ? "bg-brand-yellow"
+                            : "bg-status-error"
+                        }`}
                         style={{ width: `${robot.battery_level}%` }}
                       />
                     </div>
                   </div>
 
                   {/* Telemetry snippet */}
-                  <div className="grid grid-cols-2 gap-2 pt-2 text-micro font-medium text-brand-gray/60 border-t border-surface-3">
+                  <div className="grid grid-cols-2 gap-2 pt-2 text-micro font-medium text-brand-white/60 border-t border-surface-3">
                     <div>
-                      <span className="block text-brand-gray/40">Model</span>
+                      <span className="block text-brand-white/40">Model</span>
                       <span className="font-bold text-brand-white">{robot.model_type || "Express Runner"}</span>
                     </div>
                     <div>
-                      <span className="block text-brand-gray/40">Payload</span>
+                      <span className="block text-brand-white/40">Payload</span>
                       <span className="font-bold text-brand-white">{robot.payload_capacity_kg || 15} kg</span>
                     </div>
                   </div>
                 </div>
 
-                {/* Actions */}
-                <div className="pt-2 border-t border-surface-3 flex items-center justify-between">
-                  <button
-                    onClick={() => toggleMutation.mutate(robot.id)}
-                    disabled={isBusy || toggleMutation.isPending}
-                    className={`w-full py-2.5 px-3 rounded-xl text-caption font-bold flex items-center justify-center space-x-2 transition-all ${
-                      isOffline
-                        ? "bg-brand-lime text-brand-black hover:shadow-glow-lime"
-                        : "bg-surface-2 border border-surface-3 text-brand-gray/60 hover:text-red-400 hover:bg-red-500/10"
-                    }`}
-                  >
-                    <Power className="h-4 w-4" />
-                    <span>{isOffline ? "Activate Unit" : "Deactivate Unit"}</span>
-                  </button>
-                </div>
+                {/* ── Make Available — Admin Testing Tool ─────────────────
+                    Visible only when robot is NOT already idle.
+                    Force-resets status → IDLE and battery → 100%. ── */}
+                {!isAlreadyIdle && (
+                  <div className="pt-2 border-t border-surface-3">
+                    <button
+                      onClick={() => makeAvailableMutation.mutate(robot.id)}
+                      disabled={makeAvailableMutation.isPending}
+                      className="w-full py-2.5 px-3 rounded-xl text-caption font-bold flex items-center justify-center gap-2 transition-all bg-brand-lime/10 border border-brand-lime/30 text-brand-lime hover:bg-brand-lime hover:text-brand-black disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Zap className="h-4 w-4" />
+                      <span>
+                        {makeAvailableMutation.isPending ? "Resetting..." : "Make Available (Admin)"}
+                      </span>
+                    </button>
+                  </div>
+                )}
               </div>
             );
           })}

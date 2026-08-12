@@ -18,11 +18,15 @@ import {
   PackageCheck,
   KeyRound,
   Users,
-  Cpu
+  Cpu,
+  Sun,
+  Moon
 } from "lucide-react";
 import { toast } from "sonner";
 import InstallPwaPrompt from "@/components/InstallPwaPrompt";
 import RobotMovingLoader from "@/components/RobotMovingLoader";
+import { useThemeTransition } from "@/hooks/useThemeTransition";
+
 
 export default function DashboardLayout({
   children,
@@ -30,7 +34,9 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const { user, token, logout, loading } = useAuthStore();
+  const { theme, toggleThemeWithTransition } = useThemeTransition();
   const router = useRouter();
+
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [mountedTimeout, setMountedTimeout] = useState(false);
@@ -177,18 +183,20 @@ export default function DashboardLayout({
       <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
         {/* Header */}
         <header className="h-16 bg-surface-1 border-b border-surface-3 flex items-center justify-between px-4 sm:px-6 shrink-0 z-20">
-          <div className="flex items-center space-x-3">
-            <div className="relative w-8 h-8 rounded-lg bg-brand-lime/20 flex items-center justify-center md:hidden p-0.5 border border-brand-lime/30">
+          <div className="flex items-center space-x-2 sm:space-x-3 shrink-0 min-w-0">
+            <div className="relative w-8 h-8 rounded-lg bg-brand-lime/20 flex items-center justify-center md:hidden p-0.5 border border-brand-lime/30 shrink-0">
               <img src="/Robo.webp" alt="DSR Bot" className="w-7 h-7 object-contain" />
             </div>
-            <h2 className="text-body sm:text-title font-bold text-brand-white tracking-tight truncate max-w-[180px] sm:max-w-none">
+            <h2 className="text-body sm:text-title font-bold text-brand-white tracking-tight truncate max-w-[130px] sm:max-w-none shrink-0">
               {navItems.find((item) => item.href === pathname)?.name || "Dashboard"}
             </h2>
           </div>
 
-          <div className="flex items-center space-x-2 sm:space-x-4">
-            {/* Install PWA Button */}
-            <InstallPwaPrompt />
+          <div className="flex items-center space-x-1.5 sm:space-x-4 shrink-0">
+            {/* Install PWA Button — Hidden on mobile screens to ensure zero header title overlap */}
+            <div className="hidden sm:block">
+              <InstallPwaPrompt />
+            </div>
 
             {/* Quick action button */}
             <Link 
@@ -199,6 +207,23 @@ export default function DashboardLayout({
               <span>New Delivery</span>
             </Link>
 
+            {/* Theme Toggle Button */}
+            <button
+              onClick={(e) => {
+                const nextTheme = theme === "light" ? "dark" : "light";
+                toggleThemeWithTransition(nextTheme, e);
+              }}
+              className="p-2 rounded-lg bg-surface-2 hover:bg-surface-3 border border-surface-4 text-brand-white transition-all shadow-sm"
+              aria-label="Toggle Theme"
+              title="Toggle Light/Dark Theme"
+            >
+              {theme === "light" ? (
+                <Sun className="h-5 w-5 text-amber-600 fill-amber-500/20" />
+              ) : (
+                <Moon className="h-5 w-5 text-brand-lime" />
+              )}
+            </button>
+
             {/* Notification Badge */}
             <Link href="/dashboard/notifications" className="relative p-2 rounded-lg bg-surface-2 hover:bg-surface-3 transition-colors text-brand-white hover:text-brand-lime" aria-label="Notifications">
               <Bell className="h-5 w-5" />
@@ -206,8 +231,19 @@ export default function DashboardLayout({
                 <span className="absolute top-1 right-1 h-2.5 w-2.5 bg-brand-lime rounded-full ring-2 ring-surface-1" />
               )}
             </Link>
+
+            {/* Mobile Sign Out Button */}
+            <button
+              onClick={handleLogout}
+              className="p-2 rounded-lg bg-surface-2 hover:bg-surface-3 transition-colors text-brand-white hover:text-red-400 border border-surface-4 md:hidden"
+              aria-label="Sign Out"
+              title="Sign Out"
+            >
+              <LogOut className="h-5 w-5 text-red-400" />
+            </button>
           </div>
         </header>
+
 
         {/* Inner Content (Scrolls independently) */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 bg-surface-0 bg-grid pb-28 md:pb-8">

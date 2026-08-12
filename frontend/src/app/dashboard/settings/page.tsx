@@ -21,14 +21,15 @@ import {
   Globe,
   Sun,
   Moon,
-  Palette
+  Palette,
+  Smartphone
 } from "lucide-react";
 import { toast } from "sonner";
-import { useTheme } from "next-themes";
+import { useThemeTransition } from "@/hooks/useThemeTransition";
 
 export default function SettingsPage() {
   const { user, token } = useAuthStore();
-  const { theme, setTheme } = useTheme();
+  const { theme, toggleThemeWithTransition } = useThemeTransition();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -44,6 +45,7 @@ export default function SettingsPage() {
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [priorityDelivery, setPriorityDelivery] = useState(false);
   const [emailAlerts, setEmailAlerts] = useState(true);
+  const [hidePwaPrompt, setHidePwaPrompt] = useState(false);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -51,6 +53,7 @@ export default function SettingsPage() {
       setAutoRefresh(localStorage.getItem("pref_auto_refresh") !== "false");
       setPriorityDelivery(localStorage.getItem("pref_priority_del") === "true");
       setEmailAlerts(localStorage.getItem("pref_email_alerts") !== "false");
+      setHidePwaPrompt(localStorage.getItem("pref_hide_pwa_prompt") === "true");
     }
   }, []);
 
@@ -220,7 +223,7 @@ export default function SettingsPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-caption">
               <div className="p-3.5 rounded-xl bg-surface-2 border border-surface-3 flex items-center justify-between">
                 <div>
-                  <p className="text-micro font-medium text-brand-gray/50">Framework Version</p>
+                  <p className="text-micro font-medium text-brand-white/60">Framework Version</p>
                   <p className="font-bold text-brand-white mt-0.5">Next.js 15.5 App Router</p>
                 </div>
                 <span className="text-micro font-bold text-brand-lime">v15.5</span>
@@ -228,7 +231,7 @@ export default function SettingsPage() {
 
               <div className="p-3.5 rounded-xl bg-surface-2 border border-surface-3 flex items-center justify-between">
                 <div>
-                  <p className="text-micro font-medium text-brand-gray/50">Backend Engine</p>
+                  <p className="text-micro font-medium text-brand-white/60">Backend Engine</p>
                   <p className="font-bold text-brand-white mt-0.5">FastAPI &amp; Uvicorn</p>
                 </div>
                 <span className="text-micro font-bold text-brand-lime">Python 3.11</span>
@@ -251,8 +254,8 @@ export default function SettingsPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Dark Theme Card */}
               <div
-                onClick={() => {
-                  setTheme("dark");
+                onClick={(e) => {
+                  toggleThemeWithTransition("dark", e);
                   toast.success("Switched to Dark Theme 🌙");
                 }}
                 className={`glassmorphism rounded-2xl p-5 cursor-pointer border-2 transition-all flex items-center justify-between ${
@@ -267,7 +270,7 @@ export default function SettingsPage() {
                   </div>
                   <div>
                     <h4 className="font-bold text-caption text-brand-white">Dark Theme</h4>
-                    <p className="text-micro text-brand-gray/50">Sleek dark base (#0A0A0A)</p>
+                    <p className="text-micro text-brand-white/60">Sleek dark base (#0A0A0A)</p>
                   </div>
                 </div>
                 {mounted && (theme === "dark" || theme === "system") && (
@@ -279,8 +282,8 @@ export default function SettingsPage() {
 
               {/* Light / Ather Warm Gray Theme Card */}
               <div
-                onClick={() => {
-                  setTheme("light");
+                onClick={(e) => {
+                  toggleThemeWithTransition("light", e);
                   toast.success("Switched to Ather Light Warm Gray Theme ☀️");
                 }}
                 className={`glassmorphism rounded-2xl p-5 cursor-pointer border-2 transition-all flex items-center justify-between ${
@@ -289,13 +292,14 @@ export default function SettingsPage() {
                     : "bg-surface-2 border-surface-3 text-brand-gray/60 hover:border-surface-4"
                 }`}
               >
+
                 <div className="flex items-center space-x-3">
                   <div className="p-3 rounded-xl bg-brand-yellow text-brand-black">
                     <Sun className="h-6 w-6" />
                   </div>
                   <div>
                     <h4 className="font-bold text-caption text-brand-white">Ather Light Warm Gray</h4>
-                    <p className="text-micro text-brand-gray/50">Warm gray base (#EBF6F0)</p>
+                    <p className="text-micro text-brand-white/60">Warm gray base (#EBF6F0)</p>
                   </div>
                 </div>
                 {mounted && (theme === "light" || theme === "ather") && (
@@ -342,6 +346,28 @@ export default function SettingsPage() {
                 </div>
                 <span className={`px-3 py-1 rounded-full text-micro font-extrabold ${emailAlerts ? "bg-brand-lime text-brand-black" : "bg-surface-3 text-brand-gray/50"}`}>
                   {emailAlerts ? "ENABLED" : "DISABLED"}
+                </span>
+              </div>
+
+              <div 
+                onClick={() => {
+                  const nextVal = !hidePwaPrompt;
+                  setHidePwaPrompt(nextVal);
+                  localStorage.setItem("pref_hide_pwa_prompt", String(nextVal));
+                  window.dispatchEvent(new Event("dsr-settings-changed"));
+                  toast.success(nextVal ? "Install PWA button hidden from screen" : "Install PWA button enabled");
+                }}
+                className="p-4 flex items-center justify-between hover:bg-surface-2/50 transition-colors cursor-pointer"
+              >
+                <div className="flex items-center space-x-3">
+                  <Smartphone className="h-5 w-5 text-brand-lime" />
+                  <div>
+                    <p className="font-bold text-brand-white text-caption">Hide Install App PWA Button</p>
+                    <p className="text-micro text-brand-gray/60">Remove the &apos;Install App&apos; prompt button from header navigation bar</p>
+                  </div>
+                </div>
+                <span className={`px-3 py-1 rounded-full text-micro font-extrabold ${hidePwaPrompt ? "bg-brand-lime text-[#0A0A0A]" : "bg-surface-3 text-brand-gray/50"}`}>
+                  {hidePwaPrompt ? "HIDDEN" : "VISIBLE"}
                 </span>
               </div>
             </div>
