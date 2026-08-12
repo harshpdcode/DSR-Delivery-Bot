@@ -126,9 +126,6 @@ export default function DashboardOverview() {
       {/* ── Interactive Reel Robot Showcase ────────────────────────────── */}
       <RobotInteractiveShowcase mode="dashboard" />
 
-      {/* ── Fleet Spotlight Hero — auto-advancing robot showcase ─────────── */}
-      <FleetSpotlightCard robots={robots} isLoading={loadingRobots} />
-
       {/* ── 2-Column Metrics Grid ──────────────────────────────────── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
         {metrics.map((m, idx) => (
@@ -286,6 +283,9 @@ export default function DashboardOverview() {
           />
         </div>
       </div>
+
+      {/* ── Fleet Spotlight Carousel (Detailed Unit Status) ─────────── */}
+      <FleetSpotlightCard robots={robots} isLoading={loadingRobots} />
 
     </div>
   );
