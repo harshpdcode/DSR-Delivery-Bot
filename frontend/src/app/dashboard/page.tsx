@@ -16,6 +16,7 @@ import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import dynamic from "next/dynamic";
 import FleetSpotlightCard from "@/components/FleetSpotlightCard";
+import RobotInteractiveShowcase from "@/components/RobotInteractiveShowcase";
 
 const CampusMap = dynamic(() => import("@/components/CampusMap"), {
   ssr: false,
@@ -121,6 +122,9 @@ export default function DashboardOverview() {
           Request Robot Dispatch
         </Link>
       </div>
+
+      {/* ── Interactive Reel Robot Showcase ────────────────────────────── */}
+      <RobotInteractiveShowcase mode="dashboard" />
 
       {/* ── Fleet Spotlight Hero — auto-advancing robot showcase ─────────── */}
       <FleetSpotlightCard robots={robots} isLoading={loadingRobots} />

@@ -27,6 +27,7 @@ import LiquidPillTabs from "@/components/LiquidPillTabs";
 import DispatchButton from "@/components/DispatchButton";
 import OtpOrbitSpinner from "@/components/OtpOrbitSpinner";
 import RobotDrivingLoader from "@/components/RobotDrivingLoader";
+import RobotInteractiveShowcase from "@/components/RobotInteractiveShowcase";
 
 // Dynamic import for Leaflet map to prevent SSR window reference error
 const DynamicCampusMap = dynamic(() => import("@/components/CampusMap"), {
@@ -243,6 +244,11 @@ export default function LandingPage() {
                 <p className="text-micro font-extrabold text-brand-white/60 uppercase tracking-wider mt-1">{st.label}</p>
               </motion.div>
             ))}
+          </div>
+
+          {/* ── INTERACTIVE REEL SHOWCASE (TAP TO EXPAND & SWITCH ROBOTS) ── */}
+          <div className="pt-8">
+            <RobotInteractiveShowcase mode="landing" />
           </div>
         </div>
       </section>
