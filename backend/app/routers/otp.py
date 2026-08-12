@@ -50,10 +50,10 @@ async def generate_delivery_otp(
     if not delivery:
         raise HTTPException(status_code=404, detail="Delivery not found")
 
-    if delivery.status not in (DeliveryStatus.ARRIVED, DeliveryStatus.WAITING_OTP):
+    if delivery.status not in (DeliveryStatus.EN_ROUTE, DeliveryStatus.ARRIVED, DeliveryStatus.WAITING_OTP):
         raise HTTPException(
             status_code=409,
-            detail="OTP can only be generated when robot has arrived",
+            detail="OTP can only be generated when robot is en route or has arrived",
         )
 
     # Generate consistent OTP for this delivery

@@ -220,8 +220,8 @@ export default function TrackingPage() {
         }
       }
 
-      // Auto-fetch or generate OTP if arrived
-      if (["arrived", "waiting_otp"].includes(data.status) && !otpCode && !hasNotifiedArrivalRef.current) {
+      // Auto-fetch or generate OTP if en_route, arrived, or waiting_otp
+      if (["en_route", "arrived", "waiting_otp"].includes(data.status) && !otpCode && !hasNotifiedArrivalRef.current) {
         hasNotifiedArrivalRef.current = true;
         generateOrFetchOtp();
       }
@@ -427,7 +427,7 @@ export default function TrackingPage() {
   }
 
   const isPickupPhase = delivery.status === "pickup_in_progress";
-  const isArrivedPhase = ["arrived", "waiting_otp"].includes(delivery.status);
+  const isArrivedPhase = ["en_route", "arrived", "waiting_otp"].includes(delivery.status);
   // Item 3: include compartment_open in the unlocked check
   const isUnlocked = ["otp_verified", "compartment_open", "completed"].includes(delivery.status);
 

@@ -3,6 +3,7 @@ DSR Go Ã¢â‚¬â€ Deliveries Router
 Create deliveries, start missions, track status, view history.
 """
 
+import asyncio
 import json
 import secrets
 import string
@@ -12,8 +13,9 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
-from app.core.database import get_db
+from app.core.database import get_db, async_session
 from app.core.deps import get_current_user
 from app.models.delivery import CampusBlock, Delivery, DeliveryStatus
 from app.models.robot import Robot, RobotStatus
@@ -27,6 +29,22 @@ from app.schemas.schemas import (
 )
 
 router = APIRouter(prefix="/deliveries", tags=["Deliveries"])
+
+
+async def _schedule_robot_idle_return(robot_id: int):
+    """Background task: waits 30 seconds after delivery completion, then sets robot status back to IDLE."""
+    await asyncio.sleep(30)
+    try:
+        async with async_session() as db:
+            result = await db.execute(select(Robot).where(Robot.id == robot_id))
+            robot = result.scalar_one_or_none()
+            if robot and robot.status == RobotStatus.RETURNING:
+                robot.status = RobotStatus.IDLE
+                await db.commit()
+    except Exception as e:
+        print(f"Error in _schedule_robot_idle_return for robot {robot_id}: {e}")
+
+
 
 
 import math
@@ -412,6 +430,7 @@ async def complete_delivery(
     robot = robot_result.scalar_one_or_none()
     if robot:
         robot.status = RobotStatus.RETURNING
+        asyncio.create_task(_schedule_robot_idle_return(robot.id))
 
     history = DeliveryHistory(
         delivery_id=delivery.id,
