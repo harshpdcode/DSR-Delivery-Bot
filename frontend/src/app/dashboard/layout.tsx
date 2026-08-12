@@ -25,6 +25,7 @@ import {
 import { toast } from "sonner";
 import InstallPwaPrompt from "@/components/InstallPwaPrompt";
 import RobotMovingLoader from "@/components/RobotMovingLoader";
+import MeniscusMobileNav from "@/components/MeniscusMobileNav";
 import { useThemeTransition } from "@/hooks/useThemeTransition";
 
 
@@ -251,37 +252,8 @@ export default function DashboardLayout({
         </main>
       </div>
 
-      {/* ── Mobile Bottom Navigation Bar (Phone View) ── */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-[9999] bg-surface-1/95 backdrop-blur-xl border-t border-surface-3 px-2 py-1.5 flex items-center justify-around shadow-2xl">
-        {mobileNavItems.map((item) => {
-          const isActive = pathname === item.href;
-          const Icon = item.icon;
-          return (
-            <Link
-              key={item.name}
-              href={item.href}
-              className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all relative ${
-                isActive
-                  ? "text-brand-lime font-extrabold scale-105"
-                  : "text-brand-gray/60 hover:text-brand-white"
-              }`}
-            >
-              <div className="relative">
-                <Icon className={`h-5 w-5 ${isActive ? "text-brand-lime" : ""}`} />
-                {item.href === "/dashboard/notifications" && hasUnread && (
-                  <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-brand-lime ring-2 ring-surface-1" />
-                )}
-              </div>
-              <span className="text-[10px] font-semibold mt-0.5 tracking-tight truncate max-w-[64px]">
-                {item.shortName}
-              </span>
-              {isActive && (
-                <span className="h-1 w-4 rounded-full bg-brand-lime mt-0.5 shadow-glow-lime" />
-              )}
-            </Link>
-          );
-        })}
-      </nav>
+      {/* ── Meniscus Floating Bead Mobile Bottom Navigation (Phone View) ── */}
+      <MeniscusMobileNav items={mobileNavItems} hasUnread={hasUnread} />
     </div>
   );
 }
