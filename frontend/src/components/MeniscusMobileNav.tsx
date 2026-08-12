@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion, PanInfo } from "framer-motion";
@@ -25,23 +25,33 @@ export default function MeniscusMobileNav({ items, hasUnread = false }: Meniscus
 
   const activeIndex = items.findIndex((item) => item.href === pathname);
   const safeActiveIndex = activeIndex >= 0 ? activeIndex : 0;
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
-  // Handle Drag End to snap to adjacent tabs
+  const handleDrag = (_: any, info: PanInfo) => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const itemWidth = rect.width / items.length;
+    
+    // Calculate current drag center relative to container
+    const currentX = (safeActiveIndex + 0.5) * itemWidth + info.offset.x;
+    const targetIdx = Math.max(0, Math.min(items.length - 1, Math.floor(currentX / itemWidth)));
+    
+    if (targetIdx !== draggedIndex) {
+      setDraggedIndex(targetIdx);
+    }
+  };
+
   const handleDragEnd = (_: any, info: PanInfo) => {
-    const offsetX = info.offset.x;
-    const velocityX = info.velocity.x;
-
-    // Threshold to trigger tab change
-    if (offsetX < -35 || velocityX < -200) {
-      // Dragged Left -> Next Tab
-      if (safeActiveIndex < items.length - 1) {
-        router.push(items[safeActiveIndex + 1].href);
-      }
-    } else if (offsetX > 35 || velocityX > 200) {
-      // Dragged Right -> Previous Tab
-      if (safeActiveIndex > 0) {
-        router.push(items[safeActiveIndex - 1].href);
-      }
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const itemWidth = rect.width / items.length;
+    
+    const currentX = (safeActiveIndex + 0.5) * itemWidth + info.offset.x;
+    const targetIdx = Math.max(0, Math.min(items.length - 1, Math.floor(currentX / itemWidth)));
+    
+    setDraggedIndex(null);
+    if (items[targetIdx] && items[targetIdx].href !== pathname) {
+      router.push(items[targetIdx].href);
     }
   };
 
@@ -54,6 +64,7 @@ export default function MeniscusMobileNav({ items, hasUnread = false }: Meniscus
       >
         {items.map((item, idx) => {
           const isActive = pathname === item.href;
+          const isHighlighted = draggedIndex === idx;
           const Icon = item.icon;
 
           return (
@@ -69,16 +80,17 @@ export default function MeniscusMobileNav({ items, hasUnread = false }: Meniscus
                   <motion.div
                     layoutId="meniscus-bead"
                     drag="x"
-                    dragConstraints={{ left: -100, right: 100 }}
-                    dragElastic={0.2}
+                    dragConstraints={containerRef}
+                    dragElastic={0.15}
                     dragSnapToOrigin={true}
+                    onDrag={handleDrag}
                     onDragEnd={handleDragEnd}
-                    whileDrag={{ scale: 1.2, cursor: "grabbing" }}
+                    whileDrag={{ scale: 1.25, cursor: "grabbing" }}
                     whileHover={{ scale: 1.08 }}
                     whileTap={{ scale: 0.95 }}
-                    transition={{ type: "spring", stiffness: 360, damping: 28 }}
-                    className="w-11 h-11 rounded-full bg-brand-lime text-brand-black flex items-center justify-center shadow-[0_0_22px_rgba(132,224,0,0.6)] -mt-6 mb-0.5 z-20 cursor-grab touch-none"
-                    title="Tap or drag along the bar to switch tabs"
+                    transition={{ type: "spring", stiffness: 380, damping: 26 }}
+                    className="w-11 h-11 rounded-full bg-brand-lime text-brand-black flex items-center justify-center shadow-[0_0_25px_rgba(132,224,0,0.65)] -mt-6 mb-0.5 z-20 cursor-grab touch-none"
+                    title="Drag bead to any tab to open"
                   >
                     <Icon className="h-5 w-5 stroke-[2.5] pointer-events-none" />
                     {item.href === "/dashboard/notifications" && hasUnread && (
@@ -97,15 +109,21 @@ export default function MeniscusMobileNav({ items, hasUnread = false }: Meniscus
                   </motion.span>
                 </div>
               ) : (
-                /* Inactive Tab: Icon & Dimmed Label */
-                <div className="flex flex-col items-center justify-center py-1 transition-opacity duration-200 opacity-60 hover:opacity-100">
+                /* Inactive Tab: Icon & Dimmed Label with Hover/Drag Target Glow */
+                <div
+                  className={`flex flex-col items-center justify-center py-1 transition-all duration-200 ${
+                    isHighlighted ? "opacity-100 scale-110 text-brand-lime" : "opacity-60 hover:opacity-100 text-brand-white"
+                  }`}
+                >
                   <div className="relative">
-                    <Icon className="h-5 w-5 text-brand-white" />
+                    <Icon className={`h-5 w-5 ${isHighlighted ? "text-brand-lime" : "text-brand-white"}`} />
                     {item.href === "/dashboard/notifications" && hasUnread && (
                       <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-brand-lime ring-1 ring-surface-1" />
                     )}
                   </div>
-                  <span className="text-[10px] font-semibold text-brand-white/70 mt-1 tracking-tight truncate max-w-[64px]">
+                  <span className={`text-[10px] font-semibold mt-1 tracking-tight truncate max-w-[64px] ${
+                    isHighlighted ? "text-brand-lime font-black" : "text-brand-white/70"
+                  }`}>
                     {item.shortName}
                   </span>
                 </div>
