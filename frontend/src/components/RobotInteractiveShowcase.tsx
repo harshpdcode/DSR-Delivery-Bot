@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Bot, Battery, Gauge, Package, X, ArrowRight, CheckCircle2, ShieldCheck } from "lucide-react";
-import Link from "next/link";
+import { Bot, Battery, Gauge, Package, X, ArrowRight, CheckCircle2, ShieldCheck, Sparkles } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
@@ -17,9 +17,7 @@ export interface RobotUnit {
   blockLocation: string;
   status: "idle" | "delivering" | "charging";
   themeHex: string;
-  glowClass: string;
-  bgCircleClass: string;
-  accentBadgeClass: string;
+  glowShadow: string;
   imageSrc: string;
 }
 
@@ -35,9 +33,7 @@ const ROBOT_UNITS: RobotUnit[] = [
     blockLocation: "Block A Dock",
     status: "idle",
     themeHex: "#84E000",
-    glowClass: "shadow-[0_0_50px_rgba(132,224,0,0.35)] border-[#84E000]/40",
-    bgCircleClass: "bg-[#84E000]/15",
-    accentBadgeClass: "bg-[#84E000] text-[#0A0A0A]",
+    glowShadow: "0 0 50px rgba(132, 224, 0, 0.35)",
     imageSrc: "/Robo.webp",
   },
   {
@@ -51,9 +47,7 @@ const ROBOT_UNITS: RobotUnit[] = [
     blockLocation: "Block C Dock",
     status: "idle",
     themeHex: "#FFE234",
-    glowClass: "shadow-[0_0_50px_rgba(255,226,52,0.35)] border-[#FFE234]/40",
-    bgCircleClass: "bg-[#FFE234]/15",
-    accentBadgeClass: "bg-[#FFE234] text-[#0A0A0A]",
+    glowShadow: "0 0 50px rgba(255, 226, 52, 0.35)",
     imageSrc: "/Robo.webp",
   },
   {
@@ -67,9 +61,7 @@ const ROBOT_UNITS: RobotUnit[] = [
     blockLocation: "Library Dock",
     status: "idle",
     themeHex: "#38BDF8",
-    glowClass: "shadow-[0_0_50px_rgba(56,189,248,0.35)] border-[#38BDF8]/40",
-    bgCircleClass: "bg-[#38BDF8]/15",
-    accentBadgeClass: "bg-[#38BDF8] text-[#0A0A0A]",
+    glowShadow: "0 0 50px rgba(56, 189, 248, 0.35)",
     imageSrc: "/Robo.webp",
   },
   {
@@ -83,9 +75,7 @@ const ROBOT_UNITS: RobotUnit[] = [
     blockLocation: "Engineering Dock",
     status: "idle",
     themeHex: "#C084FC",
-    glowClass: "shadow-[0_0_50px_rgba(192,132,252,0.35)] border-[#C084FC]/40",
-    bgCircleClass: "bg-[#C084FC]/15",
-    accentBadgeClass: "bg-[#C084FC] text-[#0A0A0A]",
+    glowShadow: "0 0 50px rgba(192, 132, 252, 0.35)",
     imageSrc: "/Robo.webp",
   },
 ];
@@ -126,13 +116,11 @@ export default function RobotInteractiveShowcase({
     if (isPacking || isDriving || isConfirmed) return;
 
     setIsPacking(true);
-    // Phase 1: Packing & preparing dispatch
-    await new Promise((r) => setTimeout(r, 600));
+    await new Promise((r) => setTimeout(r, 500));
     setIsPacking(false);
     setIsDriving(true);
 
-    // Phase 2: Driving across animation
-    await new Promise((r) => setTimeout(r, 1200));
+    await new Promise((r) => setTimeout(r, 1100));
     setIsDriving(false);
     setIsConfirmed(true);
 
@@ -141,227 +129,292 @@ export default function RobotInteractiveShowcase({
     if (mode === "landing") {
       setTimeout(() => {
         router.push("/register");
-      }, 1000);
+      }, 900);
     } else {
       setTimeout(() => {
         router.push("/dashboard/delivery/new");
-      }, 1000);
+      }, 900);
     }
   };
 
   return (
     <div className={`relative w-full max-w-4xl mx-auto select-none ${className}`}>
-      {/* ── CARD CONTAINER ── */}
-      <div
-        className={`relative overflow-hidden rounded-3xl border transition-all duration-700 ease-out bg-[#0D0F17] ${
-          isOpen ? activeRobot.glowClass : "border-surface-4 hover:border-brand-lime/50 shadow-2xl"
-        }`}
-        style={{ minHeight: isOpen ? "420px" : "320px" }}
+      {/* ── CARD CONTAINER (LAYOUT SPRINGS) ── */}
+      <motion.div
+        layout
+        transition={{ type: "spring", stiffness: 240, damping: 25 }}
+        className="relative overflow-hidden rounded-3xl border border-surface-4 bg-[#0D0F17] shadow-2xl transition-colors duration-500"
+        style={{
+          boxShadow: isOpen ? activeRobot.glowShadow : "0 20px 40px rgba(0,0,0,0.6)",
+          borderColor: isOpen ? `${activeRobot.themeHex}60` : "rgba(255,255,255,0.08)",
+        }}
       >
         {/* ── CIRCLE FLOOD BACKGROUND ANIMATION (clip-path circle fill) ── */}
-        <div
-          className="absolute inset-0 pointer-events-none transition-all duration-700 ease-out z-0"
-          style={{
+        <motion.div
+          className="absolute inset-0 pointer-events-none z-0"
+          initial={false}
+          animate={{
             backgroundColor: activeRobot.themeHex,
-            opacity: isOpen ? 0.08 : 0.02,
+            opacity: isOpen ? 0.09 : 0.02,
             clipPath: isOpen ? "circle(150% at 50% 50%)" : "circle(0% at 50% 50%)",
           }}
+          transition={{ duration: 0.75, ease: [0.16, 1, 0.3, 1] }}
         />
 
         {/* Ambient radial glow backdrop */}
-        <div
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 rounded-full blur-3xl transition-colors duration-700 pointer-events-none z-0"
-          style={{
+        <motion.div
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 rounded-full blur-3xl pointer-events-none z-0"
+          animate={{
             backgroundColor: activeRobot.themeHex,
-            opacity: isOpen ? 0.25 : 0.12,
+            opacity: isOpen ? 0.22 : 0.1,
           }}
+          transition={{ duration: 0.6 }}
         />
 
-        {/* Top Bar Header inside card */}
-        <div className="relative z-10 p-5 flex items-center justify-between">
+        {/* Top Header Bar */}
+        <div className="relative z-20 p-5 flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <span className="h-2 w-2 rounded-full animate-pulse" style={{ backgroundColor: activeRobot.themeHex }} />
+            <motion.span
+              animate={{ backgroundColor: activeRobot.themeHex }}
+              className="h-2 w-2 rounded-full animate-pulse"
+            />
             <span className="text-micro font-extrabold tracking-widest uppercase text-brand-white/80">
               {isOpen ? `DSR FLEET · ${activeRobot.code}` : "DSR GO · INTERACTIVE ROBOT SHOWCASE"}
             </span>
           </div>
 
-          {isOpen && (
-            <button
-              onClick={handleToggleOpen}
-              className="p-1.5 rounded-full bg-surface-2/80 hover:bg-surface-3 text-brand-white/80 hover:text-brand-white transition-all cursor-pointer"
-              title="Close Showcase"
-            >
-              <X className="h-5 w-5" />
-            </button>
-          )}
+          <AnimatePresence>
+            {isOpen && (
+              <motion.button
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={handleToggleOpen}
+                className="p-1.5 rounded-full bg-surface-2/80 text-brand-white/80 hover:text-brand-white cursor-pointer z-30"
+                title="Close Showcase"
+              >
+                <X className="h-5 w-5" />
+              </motion.button>
+            )}
+          </AnimatePresence>
         </div>
 
-        {/* ── COLLAPSED INITIAL VIEW ── */}
-        {!isOpen && (
-          <div
-            onClick={handleToggleOpen}
-            className="relative z-10 px-6 pb-8 pt-2 flex flex-col items-center justify-center text-center cursor-pointer group"
-          >
-            {/* Robot Center Display */}
-            <div className="relative my-4 group-hover:scale-105 transition-transform duration-500">
-              <div
-                className="absolute inset-0 rounded-full blur-2xl opacity-40 group-hover:opacity-75 transition-opacity"
-                style={{ backgroundColor: activeRobot.themeHex }}
-              />
-              <img
-                src={activeRobot.imageSrc}
-                alt={activeRobot.name}
-                className="w-36 h-36 object-contain drop-shadow-[0_10px_25px_rgba(0,0,0,0.8)] relative z-10 animate-float"
-              />
-            </div>
-
-            <h3 className="text-title font-extrabold text-brand-white group-hover:text-brand-lime transition-colors">
-              {activeRobot.name}
-            </h3>
-            <p className="text-caption text-brand-white/60 max-w-sm mt-1">
-              Autonomous delivery bot tailored for campus logistics.
-            </p>
-
-            <div className="mt-5 inline-flex items-center space-x-2 px-4 py-2 rounded-full bg-surface-2/80 border border-surface-4 text-caption font-bold text-brand-white group-hover:border-brand-lime transition-all">
-              <span className="h-2 w-2 rounded-full bg-brand-lime animate-ping" />
-              <span>TAP TO INSPECT &amp; SWITCH ROBOT</span>
-            </div>
-          </div>
-        )}
-
-        {/* ── EXPANDED INTERACTIVE VIEW (REEL ANIMATION MODE) ── */}
-        {isOpen && (
-          <div className="relative z-10 p-6 md:p-8 grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
-            {/* LEFT DETAILS PANEL (Cols 7 on Desktop) */}
-            <div className="md:col-span-7 space-y-5 animate-fade-in">
-              <div>
-                <span
-                  className="inline-block px-2.5 py-0.5 rounded-md text-micro font-black uppercase tracking-wider mb-2"
-                  style={{ backgroundColor: `${activeRobot.themeHex}25`, color: activeRobot.themeHex }}
+        {/* ── CONTENT SWITCHER (ANAMATE PRESENCE) ── */}
+        <div className="relative z-10">
+          <AnimatePresence mode="wait">
+            {!isOpen ? (
+              /* ── COLLAPSED VIEW ── */
+              <motion.div
+                key="collapsed"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -15 }}
+                transition={{ duration: 0.35, ease: "easeOut" }}
+                onClick={handleToggleOpen}
+                className="px-6 pb-8 pt-2 flex flex-col items-center justify-center text-center cursor-pointer group"
+              >
+                {/* Floating Robot Avatar */}
+                <motion.div
+                  className="relative my-4"
+                  whileHover={{ scale: 1.08, rotate: 2 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 20 }}
                 >
-                  {activeRobot.tagline}
-                </span>
-                <h2 className="text-heading md:text-display font-black text-brand-white tracking-tight">
+                  <motion.div
+                    className="absolute inset-0 rounded-full blur-2xl opacity-40 group-hover:opacity-75"
+                    animate={{ backgroundColor: activeRobot.themeHex }}
+                    transition={{ duration: 0.5 }}
+                  />
+                  <img
+                    src={activeRobot.imageSrc}
+                    alt={activeRobot.name}
+                    className="w-36 h-36 object-contain drop-shadow-[0_10px_25px_rgba(0,0,0,0.8)] relative z-10 animate-float"
+                  />
+                </motion.div>
+
+                <h3 className="text-title font-extrabold text-brand-white group-hover:text-brand-lime transition-colors">
                   {activeRobot.name}
-                </h2>
-                <p className="text-caption text-brand-white/70 font-medium">
-                  Stationed at <strong className="text-brand-white">{activeRobot.blockLocation}</strong> · Ready for dispatch.
+                </h3>
+                <p className="text-caption text-brand-white/60 max-w-sm mt-1">
+                  Autonomous delivery bot tailored for campus logistics.
                 </p>
-              </div>
 
-              {/* Specs Bar */}
-              <div className="grid grid-cols-3 gap-3">
-                <div className="p-3 rounded-2xl bg-surface-2/60 border border-surface-4/60 flex flex-col items-center text-center">
-                  <Package className="h-4 w-4 mb-1 text-brand-lime" />
-                  <span className="text-micro text-brand-white/50">Payload</span>
-                  <span className="text-caption font-black text-brand-white">{activeRobot.payloadKg} kg</span>
-                </div>
-                <div className="p-3 rounded-2xl bg-surface-2/60 border border-surface-4/60 flex flex-col items-center text-center">
-                  <Battery className="h-4 w-4 mb-1 text-brand-yellow" />
-                  <span className="text-micro text-brand-white/50">Battery</span>
-                  <span className="text-caption font-black text-brand-white">{activeRobot.batteryPercent}%</span>
-                </div>
-                <div className="p-3 rounded-2xl bg-surface-2/60 border border-surface-4/60 flex flex-col items-center text-center">
-                  <Gauge className="h-4 w-4 mb-1 text-status-info" />
-                  <span className="text-micro text-brand-white/50">Speed</span>
-                  <span className="text-caption font-black text-brand-white">{activeRobot.speedMps} m/s</span>
-                </div>
-              </div>
-
-              {/* ROBOT COLOR/UNIT SELECTOR DOTS */}
-              <div className="space-y-2">
-                <span className="text-micro font-extrabold uppercase tracking-widest text-brand-white/50 block">
-                  Select Robot Unit
-                </span>
-                <div className="flex items-center space-x-3">
-                  {ROBOT_UNITS.map((unit, idx) => (
-                    <button
-                      key={unit.id}
-                      onClick={() => handleSelectRobot(idx)}
-                      className={`relative w-8 h-8 rounded-full transition-all duration-300 flex items-center justify-center cursor-pointer ${
-                        selectedIndex === idx
-                          ? "ring-2 ring-offset-2 ring-offset-[#0D0F17] scale-110"
-                          : "hover:scale-105 opacity-70 hover:opacity-100"
-                      }`}
-                      style={{
-                        backgroundColor: unit.themeHex,
-                        boxShadow: selectedIndex === idx ? `0 0 15px ${unit.themeHex}` : "none",
-                      }}
-                      title={unit.name}
-                    >
-                      {selectedIndex === idx && (
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#0D0F17]" />
-                      )}
-                    </button>
-                  ))}
-                  <span className="text-caption font-bold text-brand-white ml-2">
-                    {activeRobot.code}
-                  </span>
-                </div>
-              </div>
-
-              {/* DISPATCH ACTION BUTTON (WITH TRUCK/ROBOT DRIVE ANIMATION) */}
-              <div className="pt-2">
-                <button
-                  onClick={handleDispatchAction}
-                  disabled={isPacking || isDriving || isConfirmed}
-                  className="relative w-full overflow-hidden rounded-2xl py-3.5 px-6 font-black text-caption transition-all duration-300 flex items-center justify-center space-x-2 shadow-lg cursor-pointer"
-                  style={{
-                    backgroundColor: isConfirmed ? "#10B981" : activeRobot.themeHex,
-                    color: "#0A0A0A",
-                  }}
+                <motion.div
+                  whileHover={{ scale: 1.04 }}
+                  whileTap={{ scale: 0.96 }}
+                  className="mt-5 inline-flex items-center space-x-2 px-4 py-2 rounded-full bg-surface-2/80 border border-surface-4 text-caption font-bold text-brand-white group-hover:border-brand-lime transition-all"
                 >
-                  {/* Driving animation overlay */}
-                  {isDriving && (
-                    <div className="absolute inset-0 flex items-center justify-start px-4 pointer-events-none">
-                      <div className="animate-drive-across flex items-center space-x-2">
-                        <Bot className="h-6 w-6 text-[#0A0A0A]" />
-                        <span className="text-micro font-black uppercase">Driving...</span>
+                  <span className="h-2 w-2 rounded-full bg-brand-lime animate-ping" />
+                  <span>TAP TO INSPECT &amp; SWITCH ROBOT</span>
+                </motion.div>
+              </motion.div>
+            ) : (
+              /* ── EXPANDED REEL SHOWCASE VIEW ── */
+              <motion.div
+                key="expanded"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.4 }}
+                className="p-6 md:p-8 grid grid-cols-1 md:grid-cols-12 gap-6 items-center min-h-[380px]"
+              >
+                {/* LEFT DETAILS PANEL (Cols 7) */}
+                <div className="md:col-span-7 space-y-5">
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={activeRobot.id}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: 20 }}
+                      transition={{ duration: 0.35, ease: "easeOut" }}
+                      className="space-y-4"
+                    >
+                      <div>
+                        <motion.span
+                          className="inline-block px-2.5 py-0.5 rounded-md text-micro font-black uppercase tracking-wider mb-2"
+                          style={{
+                            backgroundColor: `${activeRobot.themeHex}25`,
+                            color: activeRobot.themeHex,
+                          }}
+                        >
+                          {activeRobot.tagline}
+                        </motion.span>
+                        <h2 className="text-heading md:text-display font-black text-brand-white tracking-tight">
+                          {activeRobot.name}
+                        </h2>
+                        <p className="text-caption text-brand-white/70 font-medium">
+                          Stationed at <strong className="text-brand-white">{activeRobot.blockLocation}</strong> · Ready for dispatch.
+                        </p>
                       </div>
+
+                      {/* Specs Bar */}
+                      <div className="grid grid-cols-3 gap-3">
+                        <div className="p-3 rounded-2xl bg-surface-2/60 border border-surface-4/60 flex flex-col items-center text-center">
+                          <Package className="h-4 w-4 mb-1 text-brand-lime" />
+                          <span className="text-micro text-brand-white/50">Payload</span>
+                          <span className="text-caption font-black text-brand-white">{activeRobot.payloadKg} kg</span>
+                        </div>
+                        <div className="p-3 rounded-2xl bg-surface-2/60 border border-surface-4/60 flex flex-col items-center text-center">
+                          <Battery className="h-4 w-4 mb-1 text-brand-yellow" />
+                          <span className="text-micro text-brand-white/50">Battery</span>
+                          <span className="text-caption font-black text-brand-white">{activeRobot.batteryPercent}%</span>
+                        </div>
+                        <div className="p-3 rounded-2xl bg-surface-2/60 border border-surface-4/60 flex flex-col items-center text-center">
+                          <Gauge className="h-4 w-4 mb-1 text-status-info" />
+                          <span className="text-micro text-brand-white/50">Speed</span>
+                          <span className="text-caption font-black text-brand-white">{activeRobot.speedMps} m/s</span>
+                        </div>
+                      </div>
+                    </motion.div>
+                  </AnimatePresence>
+
+                  {/* ROBOT COLOR/UNIT SELECTOR DOTS */}
+                  <div className="space-y-2">
+                    <span className="text-micro font-extrabold uppercase tracking-widest text-brand-white/50 block">
+                      Select Robot Unit
+                    </span>
+                    <div className="flex items-center space-x-3">
+                      {ROBOT_UNITS.map((unit, idx) => (
+                        <motion.button
+                          key={unit.id}
+                          whileHover={{ scale: 1.15 }}
+                          whileTap={{ scale: 0.9 }}
+                          onClick={() => handleSelectRobot(idx)}
+                          className="relative w-8 h-8 rounded-full flex items-center justify-center cursor-pointer transition-all duration-300"
+                          style={{
+                            backgroundColor: unit.themeHex,
+                            boxShadow: selectedIndex === idx ? `0 0 16px ${unit.themeHex}` : "none",
+                            opacity: selectedIndex === idx ? 1 : 0.65,
+                          }}
+                          title={unit.name}
+                        >
+                          {selectedIndex === idx && (
+                            <motion.span
+                              layoutId="activeDot"
+                              transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                              className="w-2.5 h-2.5 rounded-full bg-[#0D0F17]"
+                            />
+                          )}
+                        </motion.button>
+                      ))}
+                      <span className="text-caption font-bold text-brand-white ml-2">
+                        {activeRobot.code}
+                      </span>
                     </div>
-                  )}
+                  </div>
 
-                  {!isDriving && !isConfirmed && (
-                    <>
-                      <span>{isPacking ? "Preparing Dispatch..." : `Dispatch ${activeRobot.name}`}</span>
-                      <ArrowRight className="h-4 w-4" />
-                    </>
-                  )}
+                  {/* DISPATCH ACTION BUTTON */}
+                  <div className="pt-2">
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={handleDispatchAction}
+                      disabled={isPacking || isDriving || isConfirmed}
+                      className="relative w-full overflow-hidden rounded-2xl py-3.5 px-6 font-black text-caption transition-all duration-300 flex items-center justify-center space-x-2 shadow-lg cursor-pointer"
+                      style={{
+                        backgroundColor: isConfirmed ? "#10B981" : activeRobot.themeHex,
+                        color: "#0A0A0A",
+                      }}
+                    >
+                      {/* Driving Animation Overlay */}
+                      {isDriving && (
+                        <div className="absolute inset-0 flex items-center justify-start px-4 pointer-events-none">
+                          <div className="animate-drive-across flex items-center space-x-2">
+                            <Bot className="h-6 w-6 text-[#0A0A0A]" />
+                            <span className="text-micro font-black uppercase">Driving...</span>
+                          </div>
+                        </div>
+                      )}
 
-                  {isConfirmed && (
-                    <>
-                      <CheckCircle2 className="h-5 w-5 text-[#0A0A0A]" />
-                      <span>{`Mission Dispatched with ${activeRobot.name}!`}</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
+                      {!isDriving && !isConfirmed && (
+                        <>
+                          <span>{isPacking ? "Preparing Dispatch..." : `Dispatch ${activeRobot.name}`}</span>
+                          <ArrowRight className="h-4 w-4" />
+                        </>
+                      )}
 
-            {/* RIGHT ROBOT ART & 3D POSE (Cols 5 on Desktop) */}
-            <div className="md:col-span-5 flex flex-col items-center justify-center relative">
-              <div className="relative w-48 h-48 md:w-56 md:h-56 flex items-center justify-center group">
-                {/* Glow Halo */}
-                <div
-                  className="absolute inset-0 rounded-full blur-3xl opacity-60 animate-pulse"
-                  style={{ backgroundColor: activeRobot.themeHex }}
-                />
+                      {isConfirmed && (
+                        <>
+                          <CheckCircle2 className="h-5 w-5 text-[#0A0A0A]" />
+                          <span>{`Mission Dispatched with ${activeRobot.name}!`}</span>
+                        </>
+                      )}
+                    </motion.button>
+                  </div>
+                </div>
 
-                {/* Robot image with angled spring transformation (translate, scale, rotate) */}
-                <img
-                  src={activeRobot.imageSrc}
-                  alt={activeRobot.name}
-                  className="w-44 h-44 md:w-52 md:h-52 object-contain relative z-10 drop-shadow-[0_15px_30px_rgba(0,0,0,0.9)] transition-all duration-700 ease-out transform hover:scale-110 hover:-rotate-3"
-                  style={{
-                    transform: "translate(0px, -10px) scale(1.06) rotate(6deg)",
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
+                {/* RIGHT ROBOT ART (SPRING MOTION POSING) */}
+                <div className="md:col-span-5 flex flex-col items-center justify-center relative">
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={activeRobot.id}
+                      initial={{ scale: 0.8, rotate: -5, opacity: 0 }}
+                      animate={{ scale: 1.08, rotate: 6, opacity: 1, y: -10 }}
+                      exit={{ scale: 0.8, rotate: 5, opacity: 0 }}
+                      transition={{ type: "spring", stiffness: 220, damping: 20 }}
+                      className="relative w-48 h-48 md:w-56 md:h-56 flex items-center justify-center group"
+                    >
+                      {/* Glow Halo */}
+                      <motion.div
+                        className="absolute inset-0 rounded-full blur-3xl opacity-60 animate-pulse"
+                        animate={{ backgroundColor: activeRobot.themeHex }}
+                        transition={{ duration: 0.5 }}
+                      />
+
+                      <img
+                        src={activeRobot.imageSrc}
+                        alt={activeRobot.name}
+                        className="w-44 h-44 md:w-52 md:h-52 object-contain relative z-10 drop-shadow-[0_15px_35px_rgba(0,0,0,0.9)] transition-transform duration-500 group-hover:scale-110"
+                      />
+                    </motion.div>
+                  </AnimatePresence>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </motion.div>
     </div>
   );
 }
