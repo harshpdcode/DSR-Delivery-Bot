@@ -221,7 +221,10 @@ export default function FleetSpotlightCard({ robots, isLoading }: FleetSpotlight
             >
               <img
                 src="/Robo.webp"
-                alt={robot.name}
+                alt={robot.name || "DSR Robot"}
+                fetchPriority="high"
+                width={144}
+                height={144}
                 className="w-28 h-28 md:w-36 md:h-36 object-contain drop-shadow-2xl select-none"
                 draggable={false}
               />

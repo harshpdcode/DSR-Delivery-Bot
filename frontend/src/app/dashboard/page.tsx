@@ -148,7 +148,7 @@ export default function DashboardOverview() {
       <div className="glassmorphism rounded-2xl border border-surface-4 p-6 flex flex-col min-w-0">
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h3 className="text-title font-bold text-brand-white">My Deliveries</h3>
+            <h2 className="text-title font-bold text-brand-white">My Deliveries</h2>
             <p className="text-caption text-brand-white/55 mt-0.5">Track &amp; manage your delivery requests</p>
           </div>
           <Link
@@ -257,10 +257,10 @@ export default function DashboardOverview() {
       <div className="glassmorphism rounded-2xl border border-surface-4 p-6 space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-title font-bold text-brand-white flex items-center space-x-2">
+            <h2 className="text-title font-bold text-brand-white flex items-center space-x-2">
               <MapPin className="h-5 w-5 text-brand-lime" />
               <span>Silver Oak Campus Map</span>
-            </h3>
+            </h2>
             <p className="text-caption text-brand-white/55 mt-0.5">Real-time autonomous vehicle positioning &amp; building waypoints (A Block to E Block)</p>
           </div>
           <span className="text-micro font-bold text-brand-lime px-2.5 py-1 rounded bg-brand-lime/10 border border-brand-lime/20">

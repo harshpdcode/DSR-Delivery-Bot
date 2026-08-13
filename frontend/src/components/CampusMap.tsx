@@ -40,14 +40,14 @@ function robotIcon(heading = 0) {
           background:#84E000;opacity:0.35;
           animation:campusPulse 2s ease-out infinite;
         "></div>
-        <div style="
+        <div role="img" aria-label="Autonomous Robot Marker" style="
           position:absolute;inset:0;border-radius:9999px;
           background:#FFE234;border:2px solid #0F172A;
           box-shadow:0 0 10px rgba(132,224,0,0.85);
           display:flex;align-items:center;justify-content:center;
           overflow:hidden;padding:2px;
         ">
-          <img src="/Robo.webp" style="width:100%;height:100%;object-fit:contain;" />
+          <img src="/Robo.webp" alt="DSR Delivery Robot" width="34" height="34" style="width:100%;height:100%;object-fit:contain;" />
         </div>
       </div>
       <style>

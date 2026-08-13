@@ -71,6 +71,7 @@ export default function MeniscusMobileNav({ items, hasUnread = false }: Meniscus
             <Link
               key={item.href}
               href={item.href}
+              aria-label={item.name}
               className="relative flex flex-col items-center justify-center flex-1 py-1 group cursor-pointer"
             >
               {/* Active Tab: Draggable Floating Bead & Label */}
