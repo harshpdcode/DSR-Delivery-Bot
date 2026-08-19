@@ -1104,23 +1104,74 @@ export default function ScrollytellingCanvas() {
 
           {/* ══════════ CHAPTER 3: EXPLODED BREAKDOWN LIST (36% – 60%) ══════════ */}
           <div
-            className={`w-full max-w-sm sm:max-w-md lg:max-w-[400px] transition-all duration-500 pointer-events-none hidden lg:block ${
+            className={`w-full max-w-sm sm:max-w-md lg:max-w-[400px] transition-all duration-500 pointer-events-none ${
               scrollProgress >= 0.36 && scrollProgress < 0.60
-                ? "opacity-100 translate-x-0 pointer-events-auto"
-                : "opacity-0 -translate-x-12 pointer-events-none absolute"
+                ? "opacity-100 translate-y-0 sm:translate-x-0 pointer-events-auto"
+                : "opacity-0 translate-y-6 sm:-translate-x-12 pointer-events-none absolute"
             }`}
           >
-            <div className="p-4 sm:p-5 rounded-3xl bg-[#121212]/90 backdrop-blur-2xl border border-[#06B6D4]/40 shadow-[0_20px_50px_rgba(0,0,0,0.85)] space-y-2.5">
+            <div className="p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl bg-[#121212]/92 backdrop-blur-2xl border border-[#06B6D4]/40 shadow-[0_20px_50px_rgba(0,0,0,0.85)] space-y-2 sm:space-y-2.5">
               
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-extrabold text-[#06B6D4] uppercase tracking-widest flex items-center gap-1.5">
+                <span className="text-[9px] sm:text-[10px] font-extrabold text-[#06B6D4] uppercase tracking-widest flex items-center gap-1.5">
                   <Layers className="h-3.5 w-3.5 text-[#06B6D4] animate-pulse" />
                   03 · Modular Subsystems
                 </span>
-                <span className="text-[9px] font-mono text-white/50">5 Units Armed</span>
+                <span className="text-[8px] sm:text-[9px] font-mono text-white/60">5 Units Active</span>
               </div>
 
-              <div className="space-y-1.5 pt-1">
+              {/* Mobile Horizontal Module Selector Chips (Visible on Mobile < lg) */}
+              <div className="flex lg:hidden items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+                {currentHotspots.map((spot) => {
+                  const isSelected = (activeHotspot?.id || currentHotspots[0].id) === spot.id;
+                  const Icon = spot.icon;
+
+                  return (
+                    <button
+                      key={spot.id}
+                      type="button"
+                      onClick={() => {
+                        setActiveHotspot(spot);
+                        playSoundEffect("chime");
+                      }}
+                      className={`px-2.5 py-1 rounded-xl border text-[10px] font-bold flex items-center gap-1.5 whitespace-nowrap transition-all shrink-0 cursor-pointer ${
+                        isSelected
+                          ? "bg-[#06B6D4] text-[#0A0A0A] border-[#06B6D4] shadow-[0_0_12px_#06B6D4]"
+                          : "bg-[#181818] border-white/10 text-white/70 hover:text-white"
+                      }`}
+                    >
+                      <Icon className="h-3 w-3" />
+                      <span>{spot.title.split(" ")[0]}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Mobile Active Module Preview Box (Visible on Mobile < lg) */}
+              <div className="block lg:hidden p-2.5 rounded-xl bg-[#181818] border border-white/10 space-y-1.5">
+                {(() => {
+                  const currentSpot = activeHotspot || currentHotspots[0];
+                  return (
+                    <>
+                      <div className="flex items-center justify-between">
+                        <span className="text-micro font-black text-white">{currentSpot.title}</span>
+                        <span className="text-[9px] font-mono font-extrabold text-[#06B6D4]">{currentSpot.status}</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-1.5 pt-1 border-t border-white/10">
+                        {currentSpot.specs.slice(0, 2).map((sp, idx) => (
+                          <div key={idx} className="text-[9px]">
+                            <span className="text-white/50 block font-mono uppercase">{sp.label}</span>
+                            <span className="text-white font-extrabold block truncate">{sp.value}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
+
+              {/* Desktop Full Vertical List (Visible on Desktop lg+) */}
+              <div className="hidden lg:flex flex-col space-y-1.5 pt-1">
                 {currentHotspots.map((spot) => {
                   const isSelected = activeHotspot?.id === spot.id;
                   const Icon = spot.icon;
