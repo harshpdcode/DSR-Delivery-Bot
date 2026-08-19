@@ -7,7 +7,7 @@
     background-color: var(--surface-0);
     color: var(--brand-white);
     -webkit-font-smoothing: antialiased;
-    overflow-x: hidden;
+    overflow-x: clip;
   }
 }
 

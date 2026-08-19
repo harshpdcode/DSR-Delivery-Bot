@@ -28,6 +28,7 @@ import DispatchButton from "@/components/DispatchButton";
 import OtpOrbitSpinner from "@/components/OtpOrbitSpinner";
 import RobotDrivingLoader from "@/components/RobotDrivingLoader";
 import RobotInteractiveShowcase from "@/components/RobotInteractiveShowcase";
+import ScrollytellingCanvas from "@/components/ScrollytellingCanvas";
 
 // Dynamic import for Leaflet map to prevent SSR window reference error
 const DynamicCampusMap = dynamic(() => import("@/components/CampusMap"), {
@@ -87,19 +88,8 @@ export default function LandingPage() {
     }, 1400);
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-surface-0">
-        <div className="relative flex flex-col items-center">
-          <Bot className="h-12 w-12 text-brand-lime animate-bounce" />
-          <p className="mt-4 text-brand-white/60 font-medium">Initializing DSR Go System...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-surface-0 relative overflow-hidden select-none text-brand-white">
+    <div className="min-h-screen bg-surface-0 relative overflow-x-clip select-none text-brand-white">
       {/* ── Ambient Hero Background Layer ── */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
         <div className="blob blob-1" />
@@ -172,85 +162,70 @@ export default function LandingPage() {
         </div>
       </header>
 
-      {/* ── HERO SECTION ────────────────────────────────────────── */}
-      <section className="relative pt-20 pb-16 px-6 overflow-hidden">
-        <div className="max-w-4xl mx-auto text-center space-y-8 z-10 relative">
-          <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 0.5 }}
-            className="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-brand-lime/10 border border-brand-lime/30 text-brand-lime text-caption font-extrabold"
-          >
-            <Zap className="h-4 w-4 animate-pulse" />
-            <span>Silver Oak University · Live Fleet Online</span>
-          </motion.div>
+      {/* ── APPLE-GRADE SCROLLYTELLING 3D DISASSEMBLY HERO CANVAS ── */}
+      <ScrollytellingCanvas />
 
-          {/* Morph Headline Container */}
-          <div className="space-y-2">
-            <div className="morph-wrap">
-              <span className="morph-word text-display lg:text-display-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-brand-lime via-brand-yellow to-brand-lime">
-                AUTONOMOUS
-              </span>
-              <span className="morph-word text-display lg:text-display-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-brand-lime via-brand-yellow to-brand-lime">
-                EFFORTLESS
-              </span>
-              <span className="morph-word text-display lg:text-display-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-brand-lime via-brand-yellow to-brand-lime">
-                SILENT
-              </span>
-            </div>
-            <h1 className="text-display lg:text-display-lg font-black tracking-tight text-brand-white">
-              CAMPUS DELIVERY
-            </h1>
-          </div>
-
-          <p className="text-body-lg text-brand-white/70 max-w-xl mx-auto font-medium leading-relaxed">
-            Small autonomous robots move parcels between Silver Oak blocks so you don&apos;t have to. Request a pickup, watch it move on the live map, and unlock with a secure OTP code at your door.
-          </p>
-
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
-            <Link
-              href="/register"
-              className="w-full sm:w-auto px-8 py-3.5 rounded-full bg-brand-lime text-brand-black font-extrabold hover:shadow-glow-lime hover:scale-[1.03] active:scale-95 transition-all text-body flex items-center justify-center space-x-2"
-            >
-              <span>Request a Delivery</span>
-              <ArrowRight className="h-5 w-5" />
-            </Link>
-            <a
-              href="#tracking"
-              className="w-full sm:w-auto px-8 py-3.5 rounded-full border border-surface-4 text-brand-white font-bold hover:bg-surface-2 hover:border-brand-lime/40 transition-all text-body flex items-center justify-center space-x-1.5"
-            >
-              <span>See Live Tracking</span>
-              <ChevronRight className="h-5 w-5 text-brand-lime" />
-            </a>
-          </div>
-
-          {/* 4 Stat Cards Row with Hover Elevation & Entrance Motion */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-12 border-t border-surface-4/40">
-            {[
-              { val: "100%", label: "Autonomous", color: "text-brand-lime" },
-              { val: "6 Blocks", label: "Campus Coverage", color: "text-brand-yellow" },
-              { val: "< 8 Mins", label: "Avg. Delivery", color: "text-brand-white" },
-              { val: "24/7", label: "Fleet Uptime", color: "text-brand-lime" },
-            ].map((st, idx) => (
-              <motion.div
-                key={idx}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: idx * 0.1 }}
-                whileHover={{ y: -5, scale: 1.03 }}
-                className="p-5 rounded-2xl bg-surface-1/60 border border-surface-4/40 text-center transition-shadow hover:shadow-glow-lime/20 cursor-default"
-              >
-                <p className={`text-heading font-black ${st.color}`}>{st.val}</p>
-                <p className="text-micro font-extrabold text-brand-white/60 uppercase tracking-wider mt-1">{st.label}</p>
-              </motion.div>
-            ))}
-          </div>
-
-          {/* ── INTERACTIVE REEL SHOWCASE (TAP TO EXPAND & SWITCH ROBOTS) ── */}
-          <div className="pt-8">
-            <RobotInteractiveShowcase mode="landing" />
+      {/* ── GLOWING LASER DIVIDER & TRANSITION BRIDGE ── */}
+      <section className="relative z-20 pt-10 pb-6 px-4 sm:px-6 max-w-6xl mx-auto space-y-8">
+        
+        {/* Futuristic Glowing Divider Line */}
+        <div className="relative flex items-center justify-center">
+          <div className="w-full h-px bg-gradient-to-r from-transparent via-brand-lime/60 to-transparent" />
+          <div className="absolute px-3.5 py-1 rounded-full bg-surface-1/90 backdrop-blur-xl border border-brand-lime/40 text-[10px] font-mono font-extrabold text-brand-lime flex items-center gap-2 shadow-[0_0_20px_rgba(198,255,0,0.3)]">
+            <span className="h-1.5 w-1.5 rounded-full bg-brand-lime animate-ping" />
+            <span>01 // FLEET ECOSYSTEM</span>
           </div>
         </div>
+
+        {/* Transition Header */}
+        <div className="text-center max-w-3xl mx-auto space-y-3 pt-2">
+          <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-brand-lime/10 border border-brand-lime/30 text-brand-lime text-micro font-extrabold shadow-sm">
+            <Activity className="h-3.5 w-3.5 animate-pulse" />
+            <span>Silver Oak University · Campus Logistics Core</span>
+          </div>
+          <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black text-brand-white tracking-tight leading-tight">
+            Meet the Fleet in Action.
+          </h2>
+          <p className="text-caption sm:text-body text-brand-white/70 max-w-xl mx-auto font-medium leading-relaxed">
+            Select an autonomous unit below to simulate live parcel dispatch, test the electronic payload chamber, or inspect real-time fleet telemetry.
+          </p>
+
+          {/* 3 Interactive Capability Badges */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 max-w-3xl mx-auto">
+            <div className="p-3.5 rounded-2xl bg-surface-1/80 border border-surface-4/60 backdrop-blur-md text-left flex items-start gap-3 hover:border-brand-lime/40 transition-colors">
+              <div className="p-2 rounded-xl bg-brand-lime/15 text-brand-lime border border-brand-lime/30 shrink-0">
+                <Zap className="h-4 w-4" />
+              </div>
+              <div>
+                <span className="text-micro font-black text-brand-white block">100% Zero-Emission</span>
+                <span className="text-[11px] text-brand-white/60 font-medium block mt-0.5">48V LiFePO4 battery pack with 18-hour continuous runtime.</span>
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-2xl bg-surface-1/80 border border-surface-4/60 backdrop-blur-md text-left flex items-start gap-3 hover:border-[#F59E0B]/40 transition-colors">
+              <div className="p-2 rounded-xl bg-[#F59E0B]/15 text-[#F59E0B] border border-[#F59E0B]/30 shrink-0">
+                <ShieldCheck className="h-4 w-4" />
+              </div>
+              <div>
+                <span className="text-micro font-black text-brand-white block">Dynamic OTP Vault</span>
+                <span className="text-[11px] text-brand-white/60 font-medium block mt-0.5">Electromagnetic deadbolts unlocked only by recipient passcode.</span>
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-2xl bg-surface-1/80 border border-surface-4/60 backdrop-blur-md text-left flex items-start gap-3 hover:border-[#3B82F6]/40 transition-colors">
+              <div className="p-2 rounded-xl bg-[#3B82F6]/15 text-[#3B82F6] border border-[#3B82F6]/30 shrink-0">
+                <Navigation className="h-4 w-4" />
+              </div>
+              <div>
+                <span className="text-micro font-black text-brand-white block">Neural SLAM Spatial AI</span>
+                <span className="text-[11px] text-brand-white/60 font-medium block mt-0.5">Centimeter-precise real-time path planning across campus.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ── ROBOT REEL SHOWCASE DRAWER ── */}
+        <RobotInteractiveShowcase mode="landing" />
       </section>
 
       {/* ── SECTION 01 · DASHBOARD (SCROLL & HOVER ANIMATED) ────────── */}

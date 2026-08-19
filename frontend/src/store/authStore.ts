@@ -25,20 +25,18 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
-  token: typeof window !== "undefined" ? localStorage.getItem("dsr_go_token") : null,
-  // Start loading=true immediately if a token exists so DashboardLayout shows
-  // the spinner from the first paint and never double-mounts its children.
-  loading: typeof window !== "undefined" ? !!localStorage.getItem("dsr_go_token") : false,
+  token: null,
+  loading: false,
   error: null,
 
   initialize: async () => {
-    const token = get().token;
+    const token = typeof window !== "undefined" ? localStorage.getItem("dsr_go_token") : null;
     if (!token) {
-      set({ loading: false });
+      set({ token: null, user: null, loading: false });
       return;
     }
 
-    set({ loading: true, error: null });
+    set({ token, loading: true, error: null });
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 3500);
