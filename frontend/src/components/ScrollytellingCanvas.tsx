@@ -366,23 +366,23 @@ export default function ScrollytellingCanvas() {
     let offsetY: number;
 
     if (mobileDevice) {
-      // On Phone: 9:16 portrait frame is scaled so the full robot sits in the upper 60% of the screen
-      fitScale = Math.min(targetW / natW, (targetH * 0.65) / natH) * 1.0;
-      const drawWidth = natW * fitScale;
+      // On Phone: Exact 100% edge-to-edge width fit across the mobile screen
+      fitScale = targetW / natW;
+      const drawWidth = targetW;
       const drawHeight = natH * fitScale;
-      offsetX = (targetW - drawWidth) / 2;
-      offsetY = 25 * dpr; // Positioned safely below the top status bar
+      offsetX = 0;
+      offsetY = Math.max(0, (targetH - drawHeight) * 0.20);
 
       const gradient = ctx.createRadialGradient(
         targetW / 2,
-        targetH * 0.32,
-        targetW * 0.35,
+        targetH * 0.35,
+        targetW * 0.40,
         targetW / 2,
-        targetH * 0.32,
-        targetH * 0.65
+        targetH * 0.35,
+        targetH * 0.70
       );
       gradient.addColorStop(0, "rgba(10, 10, 10, 0)");
-      gradient.addColorStop(0.80, "rgba(10, 10, 10, 0.45)");
+      gradient.addColorStop(0.85, "rgba(10, 10, 10, 0.40)");
       gradient.addColorStop(1, "rgba(10, 10, 10, 1)");
 
       geomRef.current = {
