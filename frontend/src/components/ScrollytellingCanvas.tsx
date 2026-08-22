@@ -435,30 +435,14 @@ export default function ScrollytellingCanvas() {
 
     if (mobileDevice) {
       if (animationMode === "process") {
-        // On Phone: Zoom in to the delivery object (robot, parcel loading, OTP, hatch) so it looks crisp & cinematic
-        // Rather than a tiny letterbox with empty black margins, scale up ~1.75x and center on the focal action
-        const mobileZoomFactor = w < 480 ? 1.75 : 1.50;
-        fitScale = (targetW / natW) * mobileZoomFactor;
-        const drawWidth = natW * fitScale;
+        // On Phone: Fit full width cleanly (100% contain to width) so zero robot details/cameras are cropped
+        fitScale = targetW / natW;
+        const drawWidth = targetW;
         const drawHeight = natH * fitScale;
         
-        // Center horizontally on the delivery bot & action
-        offsetX = (targetW - drawWidth) / 2;
-        // Stage in upper-middle viewport so it hovers above the bottom cockpit HUD card
-        offsetY = Math.max(0, (targetH - drawHeight) * 0.26);
-
-        const centerY = offsetY + drawHeight * 0.48;
-        const gradient = ctx.createRadialGradient(
-          targetW / 2,
-          centerY,
-          targetW * 0.32,
-          targetW / 2,
-          centerY,
-          targetH * 0.68
-        );
-        gradient.addColorStop(0, "rgba(10, 10, 10, 0)");
-        gradient.addColorStop(0.75, "rgba(10, 10, 10, 0.35)");
-        gradient.addColorStop(1, "rgba(10, 10, 10, 0.96)");
+        offsetX = 0;
+        // Position comfortably in upper half so it hovers directly above the bottom HUD telemetry cards
+        offsetY = Math.max(12, (targetH * 0.44) - (drawHeight / 2));
 
         geomRef.current = {
           width: targetW,
@@ -469,7 +453,7 @@ export default function ScrollytellingCanvas() {
           drawHeight,
           offsetX,
           offsetY,
-          gradient
+          gradient: null
         };
 
         setCanvasLayout({ offsetX, offsetY, drawWidth, drawHeight, dpr });
@@ -571,20 +555,29 @@ export default function ScrollytellingCanvas() {
           ? processImagesRef.current
           : hardwareImagesRef.current;
 
-      let img = activeImages[frameIndex];
+      if (!activeImages || activeImages.length === 0) return;
+
+      const clampedIndex = Math.max(0, Math.min(activeImages.length - 1, frameIndex));
+      let img = activeImages[clampedIndex];
 
       // If requested frame isn't loaded yet during rapid scrub, find closest loaded neighbor
       if (!img || !img.complete || img.naturalWidth === 0) {
-        for (let offset = 1; offset < 30; offset++) {
-          const prev = activeImages[frameIndex - offset];
-          if (prev && prev.complete && prev.naturalWidth > 0) {
-            img = prev;
-            break;
+        for (let offset = 1; offset < 120; offset++) {
+          const prevIdx = clampedIndex - offset;
+          if (prevIdx >= 0) {
+            const prev = activeImages[prevIdx];
+            if (prev && prev.complete && prev.naturalWidth > 0) {
+              img = prev;
+              break;
+            }
           }
-          const next = activeImages[frameIndex + offset];
-          if (next && next.complete && next.naturalWidth > 0) {
-            img = next;
-            break;
+          const nextIdx = clampedIndex + offset;
+          if (nextIdx < activeImages.length) {
+            const next = activeImages[nextIdx];
+            if (next && next.complete && next.naturalWidth > 0) {
+              img = next;
+              break;
+            }
           }
         }
       }
@@ -831,10 +824,12 @@ export default function ScrollytellingCanvas() {
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener("touchmove", handleScroll, { passive: true });
     handleScroll();
 
     return () => {
       window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("touchmove", handleScroll);
     };
   }, []);
 
@@ -1006,8 +1001,10 @@ export default function ScrollytellingCanvas() {
     handleJumpToChapter(progress);
   };
 
-  // 13. Drag-to-Rotate / Drag-to-Scrub
+  // 13. Drag-to-Rotate / Drag-to-Scrub (Mouse Desktop Only)
   const handlePointerDown = (e: React.PointerEvent) => {
+    // IMPORTANT: Ignore touch events on mobile phones so native vertical swipe scroll is 100% smooth and never hijacked
+    if (e.pointerType === "touch") return;
     if (
       (e.target as HTMLElement).closest("button, a, input, [role='button']")
     )
@@ -1019,9 +1016,10 @@ export default function ScrollytellingCanvas() {
   };
 
   const handlePointerMove = (e: React.PointerEvent) => {
+    if (e.pointerType === "touch") return;
     if (!isDraggingRef.current || !containerRef.current) return;
     const deltaX = e.clientX - dragStartXRef.current;
-    const sensitivity = isMobile ? 0.0016 : 0.0012;
+    const sensitivity = 0.0012;
     const nextProgress = Math.max(
       0,
       Math.min(1, dragStartProgressRef.current - deltaX * sensitivity)
@@ -1092,15 +1090,15 @@ export default function ScrollytellingCanvas() {
   return (
     <div
       ref={containerRef}
-      className="relative w-full bg-[#0A0A0A]"
-      style={{ height: "450vh" }}
+      className="relative w-full bg-[#0A0A0A] touch-pan-y"
+      style={{ height: isMobile ? "380vh" : "450vh", touchAction: "pan-y" }}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerUp}
     >
       {/* ── STICKY CANVAS VIEWPORT CONTAINER ── */}
-      <div className="sticky top-0 h-screen w-full overflow-hidden bg-[#0A0A0A] flex items-center justify-center select-none">
+      <div className="sticky top-0 h-screen w-full overflow-hidden bg-[#0A0A0A] flex items-center justify-center select-none touch-pan-y">
         {/* High-DPI HTML5 Hardware-Accelerated Canvas */}
         <canvas
           ref={canvasRef}
