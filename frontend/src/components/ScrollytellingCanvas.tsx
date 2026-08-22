@@ -435,14 +435,28 @@ export default function ScrollytellingCanvas() {
 
     if (mobileDevice) {
       if (animationMode === "process") {
-        // On Phone: Fit full width cleanly (100% contain to width) so zero robot details/cameras are cropped
-        fitScale = targetW / natW;
-        const drawWidth = targetW;
+        // On Phone: Zoomed Hero presentation so the robot and process story fill the upper viewport immersively
+        const mobileZoomFactor = w < 480 ? 1.48 : 1.35;
+        fitScale = (targetW / natW) * mobileZoomFactor;
+        const drawWidth = natW * fitScale;
         const drawHeight = natH * fitScale;
         
-        offsetX = 0;
-        // Position comfortably in upper half so it hovers directly above the bottom HUD telemetry cards
-        offsetY = Math.max(12, (targetH * 0.44) - (drawHeight / 2));
+        // Center horizontally on the robot & action
+        offsetX = (targetW - drawWidth) / 2;
+        // Stage in upper viewport area comfortably above the bottom HUD telemetry cards
+        offsetY = Math.max(0, (targetH * 0.40) - (drawHeight / 2));
+
+        const gradient = ctx.createRadialGradient(
+          targetW / 2,
+          offsetY + drawHeight * 0.5,
+          targetW * 0.45,
+          targetW / 2,
+          offsetY + drawHeight * 0.5,
+          targetW * 0.90
+        );
+        gradient.addColorStop(0, "rgba(10, 10, 10, 0)");
+        gradient.addColorStop(0.85, "rgba(10, 10, 10, 0.35)");
+        gradient.addColorStop(1, "rgba(10, 10, 10, 0.95)");
 
         geomRef.current = {
           width: targetW,
@@ -453,7 +467,7 @@ export default function ScrollytellingCanvas() {
           drawHeight,
           offsetX,
           offsetY,
-          gradient: null
+          gradient
         };
 
         setCanvasLayout({ offsetX, offsetY, drawWidth, drawHeight, dpr });
