@@ -80,20 +80,20 @@ export default function InstallPwaPrompt() {
   }
 
   return (
-    <div className="hidden sm:flex items-center space-x-1 bg-brand-lime text-[#0A0A0A] px-2.5 py-1.5 rounded-lg shadow-glow-lime/30 group shrink-0">
+    <div className="hidden sm:flex items-center space-x-1.5 bg-brand-lime text-[#0A0A0A] px-3 py-1.5 rounded-lg shadow-sm group shrink-0 border-0">
       <button
         onClick={handleInstallClick}
-        className="flex items-center space-x-1.5 text-micro font-extrabold hover:scale-105 transition-all cursor-pointer"
+        className="flex items-center space-x-1.5 text-micro font-extrabold text-[#0A0A0A] bg-transparent border-0 p-0 hover:opacity-85 transition-opacity cursor-pointer"
         title="Install DSR Go app on your mobile device"
       >
-        <Smartphone className="h-4 w-4 group-hover:scale-110 transition-transform shrink-0" />
-        <span className="inline font-bold shrink-0">{"Install App"}</span>
-        <Download className="h-3.5 w-3.5 shrink-0" />
+        <Smartphone className="h-4 w-4 shrink-0 text-[#0A0A0A]" />
+        <span className="font-extrabold shrink-0 text-[#0A0A0A]">Install App</span>
+        <Download className="h-3.5 w-3.5 shrink-0 text-[#0A0A0A]" />
       </button>
 
       <button
         onClick={handleDismiss}
-        className="p-0.5 rounded hover:bg-black/15 text-[#0A0A0A]/70 hover:text-[#0A0A0A] transition-colors"
+        className="p-0.5 rounded hover:bg-black/15 text-[#0A0A0A]/80 hover:text-[#0A0A0A] bg-transparent border-0 transition-colors cursor-pointer flex items-center justify-center"
         title="Hide Install Button (Available in Settings)"
         aria-label="Dismiss Install Button"
       >

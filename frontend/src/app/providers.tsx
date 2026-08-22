@@ -36,7 +36,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
+      <ThemeProvider attribute="class" defaultTheme="dark" themes={["dark", "light", "cyber", "mixed"]} enableSystem={false}>
         {children}
         <Toaster 
           theme="dark" 
@@ -45,9 +45,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
           duration={4000}
           toastOptions={{
             style: {
-              background: "#1A1A1A",
-              border: "1px solid rgba(198, 255, 0, 0.2)",
-              color: "#F5F5F3",
+              background: "#181918",
+              border: "1px solid rgba(57, 181, 74, 0.3)",
+              color: "#FFFFFF",
             },
           }} 
         />

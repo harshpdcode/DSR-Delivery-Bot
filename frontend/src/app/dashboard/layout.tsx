@@ -146,13 +146,13 @@ export default function DashboardLayout({
               <Link
                 key={item.name}
                 href={item.href}
-                className={`flex items-center space-x-3 px-4 py-3 rounded-lg text-body font-semibold transition-all ${
+                className={`flex items-center space-x-3 px-4 py-3 rounded-xl text-body font-semibold transition-all ${
                   isActive
-                    ? "bg-brand-lime/10 text-brand-lime border-l-2 border-brand-lime"
-                    : "text-brand-gray/60 hover:text-brand-white hover:bg-surface-2"
+                    ? "bg-brand-lime/15 text-brand-lime font-bold border-l-4 border-brand-lime shadow-sm"
+                    : "text-brand-gray hover:text-brand-white hover:bg-surface-2 font-medium"
                 }`}
               >
-                <item.icon className="h-5 w-5" />
+                <item.icon className="h-5 w-5 shrink-0" />
                 <span>{item.name}</span>
               </Link>
             );
@@ -162,17 +162,17 @@ export default function DashboardLayout({
         {/* User Card & Logout */}
         <div className="p-4 border-t border-surface-3 bg-surface-2/40">
           <div className="flex items-center space-x-3 mb-4">
-            <div className="h-10 w-10 rounded-full bg-brand-lime/10 border border-brand-lime/20 flex items-center justify-center text-brand-lime font-bold">
+            <div className="h-10 w-10 rounded-full bg-brand-lime/15 border border-brand-lime/30 flex items-center justify-center text-brand-lime font-extrabold text-body">
               {user?.full_name?.charAt(0).toUpperCase() || "U"}
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-caption font-bold text-brand-white truncate">{user?.full_name}</p>
-              <p className="text-micro text-brand-gray/50 capitalize">{user?.role}</p>
+              <p className="text-micro text-brand-gray capitalize font-medium">{user?.role}</p>
             </div>
           </div>
           <button
             onClick={handleLogout}
-            className="w-full flex items-center space-x-2 px-4 py-2.5 rounded-lg border border-surface-4 text-brand-gray/60 hover:text-red-400 hover:bg-red-500/10 transition-colors text-caption font-bold"
+            className="w-full flex items-center space-x-2 px-4 py-2.5 rounded-lg border border-surface-3 text-brand-gray hover:text-red-500 hover:bg-red-500/10 hover:border-red-500/20 transition-colors text-caption font-bold cursor-pointer"
           >
             <LogOut className="h-4.5 w-4.5" />
             <span>Sign Out</span>

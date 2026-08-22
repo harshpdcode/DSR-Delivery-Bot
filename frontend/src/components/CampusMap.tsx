@@ -210,7 +210,7 @@ export default function CampusMap({
         center={animatedPos || CAMPUS_CENTER}
         zoom={17}
         scrollWheelZoom={true}
-        style={{ height: "100%", width: "100%", background: isDark ? "#0A0A0A" : "#EBF6F0", zIndex: 1 }}
+        style={{ height: "100%", width: "100%", background: isDark ? "#0B0B0A" : "#F3F4F2", zIndex: 1 }}
       >
         <MapResizer />
         <TileLayer
@@ -225,9 +225,9 @@ export default function CampusMap({
           <Polyline 
             positions={routePolyline} 
             pathOptions={{ 
-              color: isDark ? "#84E000" : "#4B9600", 
+              color: "#39B54A", 
               weight: 3, 
-              opacity: 0.65,
+              opacity: 0.75,
               dashArray: "5, 7"
             }} 
           />

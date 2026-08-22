@@ -131,18 +131,19 @@ export default function RobotInteractiveShowcase({
     <div className={`relative w-full max-w-4xl mx-auto select-none ${className}`}>
       {/* ── CARD CONTAINER (SHARED LAYOUT SPRINGS) ── */}
       <motion.div
+        data-theme-card="dark"
         layout
         transition={{ type: "spring", stiffness: 240, damping: 26 }}
         onClick={handleOpenShowcase}
-        className={`relative overflow-hidden rounded-3xl border transition-colors duration-500 bg-surface-1 shadow-card ${
+        className={`relative overflow-hidden rounded-3xl border transition-colors duration-500 glassmorphism shadow-card ${
           isOpen
             ? "border-brand-lime/50 shadow-glow-lime/20"
-            : "border-surface-4 hover:border-brand-lime/40 cursor-pointer"
+            : "border-surface-3 hover:border-brand-lime/40 cursor-pointer"
         }`}
       >
         {/* Ambient radial green glow backdrop */}
         <motion.div
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 rounded-full blur-3xl pointer-events-none z-0 bg-brand-lime/10"
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 rounded-full blur-3xl pointer-events-none z-0 bg-brand-lime/15"
           animate={{
             opacity: isOpen ? 0.25 : 0.1,
           }}
@@ -150,7 +151,7 @@ export default function RobotInteractiveShowcase({
         />
 
         {/* Top Header Bar */}
-        <div className="relative z-20 p-5 flex items-center justify-between">
+        <div className="relative z-20 p-5 flex items-center justify-between border-b border-surface-3/50">
           <div className="flex items-center space-x-2">
             <span className="h-2 w-2 rounded-full bg-brand-lime animate-pulse" />
             <span className="text-micro font-extrabold tracking-widest uppercase text-brand-white/80">
@@ -167,7 +168,7 @@ export default function RobotInteractiveShowcase({
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
                 onClick={handleCloseShowcase}
-                className="p-1.5 rounded-full bg-surface-2 text-brand-white/80 hover:text-brand-white hover:bg-surface-3 transition-colors cursor-pointer z-30"
+                className="p-1.5 rounded-full bg-surface-2 text-brand-white hover:text-brand-lime hover:bg-surface-3 transition-colors cursor-pointer z-30 border border-surface-4"
                 title="Close Showcase"
               >
                 <X className="h-5 w-5" />
@@ -180,40 +181,29 @@ export default function RobotInteractiveShowcase({
         <div className="relative z-10 p-6 md:p-8">
           {!isOpen ? (
             /* ── COLLAPSED STATE: Centered Robot Image + Hint ── */
-            <motion.div
-              layout="position"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="flex flex-col items-center justify-center text-center py-4"
-            >
-              {/* Shared Robot Image moving seamlessly across layout */}
-              <div className="relative my-4">
-                <div className="absolute inset-0 rounded-full blur-2xl bg-brand-lime/30 opacity-50" />
-                <motion.img
-                  layoutId="robot-showcase-hero-image"
-                  transition={{ type: "spring", stiffness: 220, damping: 22 }}
+            <div className="flex flex-col items-center justify-center text-center py-2">
+              {/* Centered Robot Hero Image with ambient glow */}
+              <div className="relative my-3 flex items-center justify-center w-40 h-40">
+                <div className="absolute inset-0 rounded-full blur-2xl bg-brand-lime/25 opacity-60 pointer-events-none" />
+                <img
                   src={activeRobot.imageSrc}
                   alt={activeRobot.name}
-                  className="w-36 h-36 object-contain relative z-10 drop-shadow-[0_10px_25px_rgba(0,0,0,0.8)]"
+                  className="w-36 h-36 object-contain relative z-10 drop-shadow-[0_12px_28px_rgba(0,0,0,0.25)]"
                 />
               </div>
 
-              <motion.h3 layout="position" className="text-title font-extrabold text-brand-white">
+              <h3 className="text-title font-extrabold text-brand-white">
                 {activeRobot.name}
-              </motion.h3>
-              <p className="text-caption text-brand-white/60 max-w-sm mt-1">
+              </h3>
+              <p className="text-caption text-brand-gray max-w-sm mt-1 font-medium">
                 Autonomous delivery bot tailored for campus logistics.
               </p>
 
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                className="mt-5 inline-flex items-center space-x-2 px-4 py-2 rounded-full bg-surface-2 border border-surface-4 text-caption font-bold text-brand-white"
-              >
+              <div className="mt-5 inline-flex items-center space-x-2 px-4 py-2 rounded-full bg-surface-2 border border-surface-3 text-caption font-bold text-brand-white shadow-sm hover:bg-brand-lime/10 hover:border-brand-lime transition-all cursor-pointer">
                 <span className="h-2 w-2 rounded-full bg-brand-lime animate-ping" />
                 <span>TAP TO INSPECT &amp; SWITCH ROBOT</span>
-              </motion.div>
-            </motion.div>
+              </div>
+            </div>
           ) : (
             /* ── EXPANDED STATE: Robot Glides to Right, Details Slide into Left ── */
             <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center min-h-[340px]">

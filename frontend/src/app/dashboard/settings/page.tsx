@@ -85,56 +85,60 @@ export default function SettingsPage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 pb-16">
-      {/* Header */}
-      <div>
-        <h1 className="text-display font-extrabold tracking-tight text-brand-white">Account &amp; Settings</h1>
-        <p className="text-body text-brand-gray/60 font-medium">
-          Manage profile details, system notifications, security, and developer options.
-        </p>
-      </div>
+      {/* Header & Tabs */}
+      <div className="space-y-4">
+        <div>
+          <h1 className="text-display font-extrabold tracking-tight text-brand-white">Account &amp; Settings</h1>
+          <p className="text-body text-brand-gray/60 font-medium">
+            Manage profile details, system notifications, security, and developer options.
+          </p>
+        </div>
 
-      {/* Segmented Tab Pills */}
-      <div className="flex bg-surface-2 p-1.5 rounded-2xl max-w-md border border-surface-3">
-        <button
-          onClick={() => setActiveTab("profile")}
-          className={`flex-1 py-2.5 px-3 rounded-xl text-caption font-bold transition-all flex items-center justify-center space-x-2 ${
-            activeTab === "profile"
-              ? "bg-surface-1 text-brand-white shadow-xs border border-surface-4"
-              : "text-brand-gray/60 hover:text-brand-white"
-          }`}
-        >
-          <UserIcon className="h-4 w-4" />
-          <span>My Profile</span>
-        </button>
-        <button
-          onClick={() => setActiveTab("preferences")}
-          className={`flex-1 py-2.5 px-3 rounded-xl text-caption font-bold transition-all flex items-center justify-center space-x-2 ${
-            activeTab === "preferences"
-              ? "bg-surface-1 text-brand-white shadow-xs border border-surface-4"
-              : "text-brand-gray/60 hover:text-brand-white"
-          }`}
-        >
-          <Bell className="h-4 w-4" />
-          <span>Preferences</span>
-        </button>
-        {isAdminOrOperator && (
+        {/* Segmented Tab Pills */}
+        <div className="flex bg-surface-2 p-1.5 rounded-2xl max-w-md border border-surface-3">
           <button
-            onClick={() => setActiveTab("developer")}
+            onClick={() => setActiveTab("profile")}
             className={`flex-1 py-2.5 px-3 rounded-xl text-caption font-bold transition-all flex items-center justify-center space-x-2 ${
-              activeTab === "developer"
-                ? "bg-surface-1 text-brand-white shadow-xs border border-surface-4"
-                : "text-brand-gray/60 hover:text-brand-white"
+              activeTab === "profile"
+                ? "bg-brand-lime text-black font-extrabold shadow-sm"
+                : "text-brand-gray/80 hover:text-brand-white hover:bg-surface-3/40"
             }`}
           >
-            <Code className="h-4 w-4" />
-            <span>Developer</span>
+            <UserIcon className="h-4 w-4" />
+            <span>My Profile</span>
           </button>
-        )}
+          <button
+            onClick={() => setActiveTab("preferences")}
+            className={`flex-1 py-2.5 px-3 rounded-xl text-caption font-bold transition-all flex items-center justify-center space-x-2 ${
+              activeTab === "preferences"
+                ? "bg-brand-lime text-black font-extrabold shadow-sm"
+                : "text-brand-gray/80 hover:text-brand-white hover:bg-surface-3/40"
+            }`}
+          >
+            <Bell className="h-4 w-4" />
+            <span>Preferences</span>
+          </button>
+          {isAdminOrOperator && (
+            <button
+              onClick={() => setActiveTab("developer")}
+              className={`flex-1 py-2.5 px-3 rounded-xl text-caption font-bold transition-all flex items-center justify-center space-x-2 ${
+                activeTab === "developer"
+                  ? "bg-brand-lime text-black font-extrabold shadow-sm"
+                  : "text-brand-gray/80 hover:text-brand-white hover:bg-surface-3/40"
+              }`}
+            >
+              <Code className="h-4 w-4" />
+              <span>Developer</span>
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* Profile Details Tab */}
-      {activeTab === "profile" && (
-        <div className="space-y-6">
+      {/* Content Area */}
+      <div className="space-y-6">
+        {/* Profile Details Tab */}
+        {activeTab === "profile" && (
+          <div className="space-y-6">
           <form onSubmit={handleUpdateProfile} className="glassmorphism rounded-2xl border border-surface-4 p-6 space-y-6">
             <div className="flex items-center justify-between border-b border-surface-3 pb-4">
               <div className="flex items-center space-x-3">
@@ -251,62 +255,117 @@ export default function SettingsPage() {
               Interface Theme Selection
             </h3>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Dark Theme Card */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Ather Dark Theme (Default) */}
               <div
                 onClick={(e) => {
                   toggleThemeWithTransition("dark", e);
-                  toast.success("Switched to Dark Theme 🌙");
+                  toast.success("Switched to Ather Dark Theme 🌙");
                 }}
-                className={`glassmorphism rounded-2xl p-5 cursor-pointer border-2 transition-all flex items-center justify-between ${
-                  mounted && (theme === "dark" || theme === "system")
-                    ? "bg-surface-1 border-brand-lime text-brand-white"
+                className={`glassmorphism rounded-2xl p-4 cursor-pointer border-2 transition-all flex flex-col justify-between space-y-3 ${
+                  mounted && (theme === "dark" || theme === "system" || !theme)
+                    ? "bg-surface-1 border-brand-lime text-brand-white shadow-[0_0_15px_rgba(57,181,74,0.25)]"
                     : "bg-surface-2 border-surface-3 text-brand-gray/60 hover:border-surface-4"
                 }`}
               >
-                <div className="flex items-center space-x-3">
-                  <div className="p-3 rounded-xl bg-surface-0 text-brand-lime border border-surface-3">
-                    <Moon className="h-6 w-6" />
+                <div className="flex items-center justify-between">
+                  <div className="p-2.5 rounded-xl bg-[#0B0B0A] text-[#39B54A] border border-[#282A28]">
+                    <Moon className="h-5 w-5" />
                   </div>
-                  <div>
-                    <h4 className="font-bold text-caption text-brand-white">Dark Theme</h4>
-                    <p className="text-micro text-brand-white/60">Sleek dark base (#0A0A0A)</p>
-                  </div>
+                  {mounted && (theme === "dark" || theme === "system" || !theme) && (
+                    <span className="px-2.5 py-0.5 rounded-full bg-[#39B54A] text-white text-[10px] font-extrabold">
+                      Default
+                    </span>
+                  )}
                 </div>
-                {mounted && (theme === "dark" || theme === "system") && (
-                  <span className="px-3 py-1 rounded-full bg-brand-lime text-brand-black text-micro font-extrabold">
-                    Active
-                  </span>
-                )}
+                <div>
+                  <h4 className="font-bold text-caption text-brand-white">Ather Dark (Default)</h4>
+                  <p className="text-micro text-brand-white/60">Primary Black (#0B0B0A) · Green (#39B54A)</p>
+                </div>
               </div>
 
-              {/* Light / Ather Warm Gray Theme Card */}
+              {/* Ather Light Clean Theme */}
               <div
                 onClick={(e) => {
                   toggleThemeWithTransition("light", e);
-                  toast.success("Switched to Ather Light Warm Gray Theme ☀️");
+                  toast.success("Switched to Ather Clean Light Theme ☀️");
                 }}
-                className={`glassmorphism rounded-2xl p-5 cursor-pointer border-2 transition-all flex items-center justify-between ${
+                className={`glassmorphism rounded-2xl p-4 cursor-pointer border-2 transition-all flex flex-col justify-between space-y-3 ${
                   mounted && (theme === "light" || theme === "ather")
-                    ? "bg-surface-1 border-brand-lime text-brand-white"
+                    ? "bg-surface-1 border-brand-lime text-brand-white shadow-[0_0_15px_rgba(57,181,74,0.25)]"
                     : "bg-surface-2 border-surface-3 text-brand-gray/60 hover:border-surface-4"
                 }`}
               >
-
-                <div className="flex items-center space-x-3">
-                  <div className="p-3 rounded-xl bg-brand-yellow text-brand-black">
-                    <Sun className="h-6 w-6" />
+                <div className="flex items-center justify-between">
+                  <div className="p-2.5 rounded-xl bg-[#E8F3EA] text-[#39B54A] border border-[#D9DAD8]">
+                    <Sun className="h-5 w-5" />
                   </div>
-                  <div>
-                    <h4 className="font-bold text-caption text-brand-white">Ather Light Warm Gray</h4>
-                    <p className="text-micro text-brand-white/60">Warm gray base (#EBF6F0)</p>
-                  </div>
+                  {mounted && (theme === "light" || theme === "ather") && (
+                    <span className="px-2.5 py-0.5 rounded-full bg-[#39B54A] text-white text-[10px] font-extrabold">
+                      Active
+                    </span>
+                  )}
                 </div>
-                {mounted && (theme === "light" || theme === "ather") && (
-                  <span className="px-3 py-1 rounded-full bg-brand-lime text-brand-black text-micro font-extrabold">
-                    Active
-                  </span>
-                )}
+                <div>
+                  <h4 className="font-bold text-caption text-brand-white">Ather Light</h4>
+                  <p className="text-micro text-brand-white/60">App BG (#F3F4F2) · Highlight (#E8F3EA)</p>
+                </div>
+              </div>
+
+              {/* Mixed Duo Two-Tone Theme */}
+              <div
+                onClick={(e) => {
+                  toggleThemeWithTransition("mixed", e);
+                  toast.success("Switched to Mixed Duo Two-Tone Theme 🌓");
+                }}
+                className={`glassmorphism rounded-2xl p-4 cursor-pointer border-2 transition-all flex flex-col justify-between space-y-3 ${
+                  mounted && theme === "mixed"
+                    ? "bg-surface-1 border-brand-lime text-brand-white shadow-[0_0_15px_rgba(57,181,74,0.25)]"
+                    : "bg-surface-2 border-surface-3 text-brand-gray/60 hover:border-surface-4"
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="relative p-2.5 rounded-xl bg-gradient-to-r from-[#0B0B0A] via-[#0B0B0A] to-[#E8F3EA] border border-[#282A28] flex items-center justify-center overflow-hidden">
+                    <Sparkles className="h-5 w-5 text-[#39B54A]" />
+                  </div>
+                  {mounted && theme === "mixed" && (
+                    <span className="px-2.5 py-0.5 rounded-full bg-[#39B54A] text-white text-[10px] font-extrabold">
+                      Active
+                    </span>
+                  )}
+                </div>
+                <div>
+                  <h4 className="font-bold text-caption text-brand-white">Mixed Duo (Two-Tone)</h4>
+                  <p className="text-micro text-brand-white/60">Dark Frame (#0B0B0A) · Light Workspace</p>
+                </div>
+              </div>
+
+              {/* Cyberpunk Neon Theme */}
+              <div
+                onClick={(e) => {
+                  toggleThemeWithTransition("cyber", e);
+                  toast.success("Switched to Cyberpunk Neon Theme ⚡");
+                }}
+                className={`glassmorphism rounded-2xl p-4 cursor-pointer border-2 transition-all flex flex-col justify-between space-y-3 ${
+                  mounted && theme === "cyber"
+                    ? "bg-surface-1 border-[#C6FF00] text-brand-white shadow-[0_0_15px_rgba(198,255,0,0.25)]"
+                    : "bg-surface-2 border-surface-3 text-brand-gray/60 hover:border-surface-4"
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="p-2.5 rounded-xl bg-[#0A0A0A] text-[#C6FF00] border border-[#2B2B2B]">
+                    <Zap className="h-5 w-5" />
+                  </div>
+                  {mounted && theme === "cyber" && (
+                    <span className="px-2.5 py-0.5 rounded-full bg-[#C6FF00] text-black text-[10px] font-extrabold">
+                      Active
+                    </span>
+                  )}
+                </div>
+                <div>
+                  <h4 className="font-bold text-caption text-brand-white">Cyberpunk Neon</h4>
+                  <p className="text-micro text-brand-white/60">Dark (#0A0A0A) · Neon Lime (#C6FF00)</p>
+                </div>
               </div>
             </div>
           </div>
@@ -409,6 +468,7 @@ export default function SettingsPage() {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

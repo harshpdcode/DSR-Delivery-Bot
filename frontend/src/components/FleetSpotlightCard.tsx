@@ -158,6 +158,7 @@ export default function FleetSpotlightCard({ robots, isLoading }: FleetSpotlight
 
   return (
     <div
+      data-theme-card="dark"
       className="glassmorphism rounded-3xl border border-surface-4 overflow-hidden relative"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}

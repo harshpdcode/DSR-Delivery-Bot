@@ -679,48 +679,82 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto space-y-8">
           <div className="max-w-xl space-y-2">
             <span className="text-micro font-extrabold text-brand-lime uppercase tracking-widest flex items-center gap-1.5">
-              <span className="h-1.5 w-4 bg-brand-lime rounded-full" /> 06 · Settings
+              <span className="h-1.5 w-4 bg-brand-lime rounded-full" /> 06 · Settings & Themes
             </span>
-            <h2 className="text-display font-black text-brand-white">Two themes. Same product.</h2>
+            <h2 className="text-display font-black text-brand-white">Clean minimal themes. Tailored for Delivery.</h2>
             <p className="text-body text-brand-white/60 font-medium">
-              Classic keeps the dark lime look. Light strips it back to a warm, high-contrast daytime layout — the button at top right actually switches it.
+              Ather delivery robot design system with a minimal foundation and purposeful green accents for robot status, navigation, and security.
             </p>
           </div>
 
           {/* Theme Swatches with Circle Wipe & Hover Animation */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-2xl">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl">
             <motion.div
               whileHover={{ y: -5, scale: 1.02 }}
               onClick={(e) => toggleThemeWithTransition("dark", e)}
-              className={`p-6 rounded-3xl cursor-pointer border-2 transition-all ${
+              className={`p-5 rounded-3xl cursor-pointer border-2 transition-all ${
                 mounted && (theme === "dark" || theme === "system" || !theme)
                   ? "bg-surface-1 border-brand-lime shadow-glow-lime"
                   : "bg-surface-2 border-surface-4 hover:border-brand-lime/40"
               }`}
             >
-              <div className="h-20 rounded-2xl bg-[#0A0A0A] p-4 flex items-center space-x-3 mb-4 border border-surface-4">
-                <div className="w-8 h-8 rounded-lg bg-[#C6FF00]" />
-                <span className="text-caption font-bold text-white">Classic Dark Theme</span>
+              <div className="h-16 rounded-2xl bg-[#0B0B0A] p-3.5 flex items-center space-x-3 mb-3.5 border border-[#282A28]">
+                <div className="w-7 h-7 rounded-lg bg-[#39B54A] flex items-center justify-center text-white text-xs font-bold">✓</div>
+                <span className="text-caption font-bold text-white">Ather Dark (Default)</span>
               </div>
-              <h4 className="text-title font-extrabold text-brand-white">Classic (Dark)</h4>
-              <p className="text-micro text-brand-white/60">High contrast dark base (#0A0A0A)</p>
+              <h4 className="text-title font-extrabold text-brand-white">Ather Dark</h4>
+              <p className="text-micro text-brand-white/60">Primary Black (#0B0B0A) · Green (#39B54A)</p>
             </motion.div>
 
             <motion.div
               whileHover={{ y: -5, scale: 1.02 }}
               onClick={(e) => toggleThemeWithTransition("light", e)}
-              className={`p-6 rounded-3xl cursor-pointer border-2 transition-all ${
+              className={`p-5 rounded-3xl cursor-pointer border-2 transition-all ${
                 mounted && (theme === "light" || theme === "ather")
                   ? "bg-surface-1 border-brand-lime shadow-glow-lime"
                   : "bg-surface-2 border-surface-4 hover:border-brand-lime/40"
               }`}
             >
-              <div className="h-20 rounded-2xl bg-[#EBF6F0] p-4 flex items-center space-x-3 mb-4 border border-surface-4">
-                <div className="w-8 h-8 rounded-lg bg-[#84E000]" />
-                <span className="text-caption font-bold text-[#0F172A]">Ather Light Theme</span>
+              <div className="h-16 rounded-2xl bg-[#F3F4F2] p-3.5 flex items-center space-x-3 mb-3.5 border border-[#D9DAD8]">
+                <div className="w-7 h-7 rounded-lg bg-[#39B54A]" />
+                <span className="text-caption font-bold text-[#0B0B0A]">Ather Light</span>
               </div>
-              <h4 className="text-title font-extrabold text-brand-white">Ather Warm Gray (Light)</h4>
-              <p className="text-micro text-brand-white/60">Warm gray daytime layout (#EBF6F0)</p>
+              <h4 className="text-title font-extrabold text-brand-white">Ather Light</h4>
+              <p className="text-micro text-brand-white/60">App BG (#F3F4F2) · Highlight (#E8F3EA)</p>
+            </motion.div>
+
+            <motion.div
+              whileHover={{ y: -5, scale: 1.02 }}
+              onClick={(e) => toggleThemeWithTransition("mixed", e)}
+              className={`p-5 rounded-3xl cursor-pointer border-2 transition-all ${
+                mounted && theme === "mixed"
+                  ? "bg-surface-1 border-brand-lime shadow-glow-lime"
+                  : "bg-surface-2 border-surface-4 hover:border-brand-lime/40"
+              }`}
+            >
+              <div className="h-16 rounded-2xl bg-gradient-to-r from-[#0B0B0A] via-[#0B0B0A] to-[#E8F3EA] p-3.5 flex items-center space-x-3 mb-3.5 border border-[#282A28]">
+                <div className="w-7 h-7 rounded-lg bg-[#39B54A]" />
+                <span className="text-caption font-bold text-white">Mixed Duo</span>
+              </div>
+              <h4 className="text-title font-extrabold text-brand-white">Mixed Duo</h4>
+              <p className="text-micro text-brand-white/60">Dark Frame (#0B0B0A) · Light Workspace</p>
+            </motion.div>
+
+            <motion.div
+              whileHover={{ y: -5, scale: 1.02 }}
+              onClick={(e) => toggleThemeWithTransition("cyber", e)}
+              className={`p-5 rounded-3xl cursor-pointer border-2 transition-all ${
+                mounted && theme === "cyber"
+                  ? "bg-surface-1 border-[#C6FF00] shadow-[0_0_20px_rgba(198,255,0,0.3)]"
+                  : "bg-surface-2 border-surface-4 hover:border-[#C6FF00]/40"
+              }`}
+            >
+              <div className="h-16 rounded-2xl bg-[#0A0A0A] p-3.5 flex items-center space-x-3 mb-3.5 border border-[#2B2B2B]">
+                <div className="w-7 h-7 rounded-lg bg-[#C6FF00]" />
+                <span className="text-caption font-bold text-[#F5F5F3]">Cyberpunk</span>
+              </div>
+              <h4 className="text-title font-extrabold text-brand-white">Cyber Neon</h4>
+              <p className="text-micro text-brand-white/60">Deep Black (#0A0A0A) · Lime (#C6FF00)</p>
             </motion.div>
           </div>
         </div>
