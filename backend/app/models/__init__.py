@@ -6,6 +6,7 @@ from app.models.supporting import (
     Telemetry,
     Notification,
     RobotHealth,
+    OTPLog,
     DeliveryHistory,
     AuditLog,
 )
@@ -22,6 +23,7 @@ __all__ = [
     "Telemetry",
     "Notification",
     "RobotHealth",
+    "OTPLog",
     "DeliveryHistory",
     "AuditLog",
 ]

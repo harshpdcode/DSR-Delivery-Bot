@@ -1,87 +1,112 @@
 import asyncio
-from app.core.database import async_session, engine, Base
-from app.models.user import User, UserRole
+from typing import Any, Dict, Optional
+from loguru import logger
+from sqlalchemy import select, delete, text
+from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker, AsyncSession
+
+from app.core import database
+from app.core.database import Base
 from app.core.security import hash_password
+import app.models  # Ensures all ORM models are registered on Base.metadata
+from app.models.user import User, UserRole
+from app.models.robot import Robot, RobotStatus
 
-async def seed():
-    # create tables if they don't exist
-    async with engine.begin() as conn:
+
+async def create_tables(engine: Optional[AsyncEngine] = None) -> None:
+    """Ensure all database tables exist without dropping existing data."""
+    target_engine = engine or database.engine
+    async with target_engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-        
-    async with async_session() as session:
-        from sqlalchemy import select, delete
-        
-        # Remove legacy test@example.com user if present
-        await session.execute(delete(User).where(User.email == "test@example.com"))
-        await session.commit()
 
+        # Ensure optional delivery columns exist if database was migrated from older versions
+        for col, col_type in [
+            ("is_preloaded", "BOOLEAN DEFAULT FALSE"),
+            ("extra_stops", "TEXT"),
+            ("estimated_arrival", "TIMESTAMP WITH TIME ZONE"),
+        ]:
+            try:
+                await conn.execute(text(f"ALTER TABLE deliveries ADD COLUMN {col} {col_type};"))
+            except Exception:
+                pass
+
+
+async def seed_data(
+    session_factory: Optional[async_sessionmaker[AsyncSession]] = None,
+) -> Dict[str, Any]:
+    """Idempotently seed initial demo users and fleet robots."""
+    target_session = session_factory or database.async_session
+
+    users_created = 0
+    users_verified = 0
+    robots_created = 0
+    robots_verified = 0
+
+    async with target_session() as session:
         users_to_seed = [
             {
                 "email": "admin",
                 "full_name": "System Admin",
                 "password": "admin123",
                 "role": UserRole.ADMIN,
-                "phone": "+1234567890"
+                "phone": "+1234567890",
             },
             {
                 "email": "admin@example.com",
                 "full_name": "System Admin",
                 "password": "admin123",
                 "role": UserRole.ADMIN,
-                "phone": "+1234567891"
+                "phone": "+1234567891",
             },
             {
                 "email": "user",
                 "full_name": "Campus User",
                 "password": "user123",
                 "role": UserRole.USER,
-                "phone": "+1987654321"
+                "phone": "+1987654321",
             },
             {
                 "email": "user@example.com",
                 "full_name": "Campus User",
                 "password": "user123",
                 "role": UserRole.USER,
-                "phone": "+1987654322"
+                "phone": "+1987654322",
             },
             {
                 "email": "operator@example.com",
                 "full_name": "Sarah Jenkins (Fleet Control)",
                 "password": "operator123",
                 "role": UserRole.OPERATOR,
-                "phone": "+1555019200"
+                "phone": "+1555019200",
             },
             {
                 "email": "professor@example.com",
                 "full_name": "Dr. Aris Thorne (Faculty)",
                 "password": "prof123",
                 "role": UserRole.USER,
-                "phone": "+1555014300"
+                "phone": "+1555014300",
             },
             {
                 "email": "student@example.com",
                 "full_name": "Alex Rivera (Student)",
                 "password": "student123",
                 "role": UserRole.USER,
-                "phone": "+1555018800"
-            }
+                "phone": "+1555018800",
+            },
         ]
-        
+
         for user_data in users_to_seed:
             result = await session.execute(select(User).where(User.email == user_data["email"]))
             existing_user = result.scalars().first()
-            
-            # Also check phone collision
+
             phone_result = await session.execute(select(User).where(User.phone == user_data["phone"]))
             existing_phone = phone_result.scalars().first()
 
             if not existing_user:
-                # If phone is taken by a different user, use a fallback phone number
                 phone_num = user_data["phone"]
                 if existing_phone and existing_phone.email != user_data["email"]:
                     phone_num = f"{user_data['phone']}_{user_data['email']}"
 
-                print(f"Creating demo user {user_data['email']} ({user_data['role']})...")
+                logger.info(f"Creating demo user {user_data['email']} ({user_data['role']})...")
                 new_user = User(
                     email=user_data["email"],
                     full_name=user_data["full_name"],
@@ -89,33 +114,96 @@ async def seed():
                     role=user_data["role"],
                     is_active=True,
                     is_verified=True,
-                    phone=phone_num
+                    phone=phone_num,
                 )
                 session.add(new_user)
+                users_created += 1
             else:
-                existing_user.hashed_password = hash_password(user_data["password"])
-                existing_user.role = user_data["role"]
-                existing_user.is_active = True
-                existing_user.is_verified = True
-                if not existing_phone or existing_phone.email == user_data["email"]:
-                    existing_user.phone = user_data["phone"]
-        
-        await session.commit()
-        print("Admin and User credentials seeded successfully!")
+                # Existing user is strictly preserved: passwords, roles, and user data are NOT overwritten
+                users_verified += 1
 
-        # Seed initial fleet robots if empty
-        from app.models.robot import Robot, RobotStatus
-        robots_result = await session.execute(select(Robot))
-        if not robots_result.scalars().first():
-            print("Seeding initial fleet robots...")
-            robots_to_seed = [
-                Robot(name="DSR-Alpha 01", serial_number="DSR-SN-001", status=RobotStatus.IDLE, battery_level=95.0, location_lat=23.0906, location_lng=72.5344, payload_capacity_kg=15.0, firmware_version="2.4.1", model_type="Heavy Payload Bot"),
-                Robot(name="DSR-Beta 02", serial_number="DSR-SN-002", status=RobotStatus.IDLE, battery_level=88.0, location_lat=23.0912, location_lng=72.5351, payload_capacity_kg=10.0, firmware_version="2.4.1", model_type="Express Runner"),
-                Robot(name="DSR-Gamma 03", serial_number="DSR-SN-003", status=RobotStatus.CHARGING, battery_level=42.0, location_lat=180.0, location_lng=80.0, payload_capacity_kg=12.0, firmware_version="2.4.1", model_type="Standard Bot"),
-            ]
-            session.add_all(robots_to_seed)
-            await session.commit()
-            print("Initial fleet robots seeded successfully!")
+        await session.commit()
+
+        # Seed initial fleet robots idempotently by serial_number
+        robots_to_seed = [
+            {
+                "name": "DSR-Alpha 01",
+                "serial_number": "DSR-SN-001",
+                "status": RobotStatus.IDLE,
+                "battery_level": 95.0,
+                "location_lat": 23.0906,
+                "location_lng": 72.5344,
+                "payload_capacity_kg": 15.0,
+                "firmware_version": "2.4.1",
+                "model_type": "Heavy Payload Bot",
+            },
+            {
+                "name": "DSR-Beta 02",
+                "serial_number": "DSR-SN-002",
+                "status": RobotStatus.IDLE,
+                "battery_level": 88.0,
+                "location_lat": 23.0912,
+                "location_lng": 72.5351,
+                "payload_capacity_kg": 10.0,
+                "firmware_version": "2.4.1",
+                "model_type": "Express Runner",
+            },
+            {
+                "name": "DSR-Gamma 03",
+                "serial_number": "DSR-SN-003",
+                "status": RobotStatus.CHARGING,
+                "battery_level": 42.0,
+                "location_lat": 180.0,
+                "location_lng": 80.0,
+                "payload_capacity_kg": 12.0,
+                "firmware_version": "2.4.1",
+                "model_type": "Standard Bot",
+            },
+        ]
+
+        for bot_data in robots_to_seed:
+            bot_res = await session.execute(
+                select(Robot).where(Robot.serial_number == bot_data["serial_number"])
+            )
+            existing_bot = bot_res.scalars().first()
+            if not existing_bot:
+                logger.info(f"Seeding robot {bot_data['name']} ({bot_data['serial_number']})...")
+                new_bot = Robot(**bot_data)
+                session.add(new_bot)
+                robots_created += 1
+            else:
+                robots_verified += 1
+
+        await session.commit()
+
+    return {
+        "users_created": users_created,
+        "users_verified": users_verified,
+        "robots_created": robots_created,
+        "robots_verified": robots_verified,
+    }
+
+
+async def init_and_seed_db(
+    engine: Optional[AsyncEngine] = None,
+    session_factory: Optional[async_sessionmaker[AsyncSession]] = None,
+) -> Dict[str, Any]:
+    """Create all missing tables and run idempotent initial seed."""
+    await create_tables(engine=engine)
+    details = await seed_data(session_factory=session_factory)
+    return {
+        "status": "success",
+        "tables": sorted(list(Base.metadata.tables.keys())),
+        "details": details,
+    }
+
+
+async def seed() -> Dict[str, Any]:
+    """CLI and startup compatibility wrapper."""
+    res = await init_and_seed_db()
+    print("Database tables and seed data verified successfully:", res)
+    return res
+
 
 if __name__ == "__main__":
     asyncio.run(seed())

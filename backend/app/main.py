@@ -14,12 +14,13 @@ from loguru import logger
 from sqlalchemy import select, text
 
 from app.core.config import get_settings
-from app.core.database import engine, Base, async_session
+from app.core import database
+from app.core.database import Base
 from app.core.redis import close_redis
 from app.models.delivery import Delivery, DeliveryStatus
 from app.models.robot import Robot, RobotStatus
 from app.models.supporting import DeliveryHistory
-from app.routers import auth, robots, deliveries, otp, analytics, tracking, users
+from app.routers import auth, robots, deliveries, otp, analytics, tracking, users, admin
 from app.routers.tracking import manager
 
 settings = get_settings()
@@ -39,7 +40,7 @@ async def _run_live_fleet_simulation():
     while True:
         try:
             await asyncio.sleep(2.5)
-            async with async_session() as db:
+            async with database.async_session() as db:
                 result = await db.execute(
                     select(Delivery).where(
                         Delivery.status.in_([DeliveryStatus.EN_ROUTE, DeliveryStatus.PICKUP_IN_PROGRESS]),
@@ -124,61 +125,52 @@ async def lifespan(app: FastAPI):
     """Application startup/shutdown lifecycle."""
     logger.info("🚀 DSR Go Backend starting...")
 
-    # Ensure database columns exist
-    async def _ensure_db_columns(conn):
-        for col, col_type in [
-            ("is_preloaded", "BOOLEAN DEFAULT FALSE"),
-            ("extra_stops", "TEXT"),
-            ("estimated_arrival", "TIMESTAMP WITH TIME ZONE"),
-        ]:
-            try:
-                await conn.execute(text(f"ALTER TABLE deliveries ADD COLUMN {col} {col_type};"))
-            except Exception:
-                pass
+    from seed import init_and_seed_db
+    is_production = settings.APP_ENV.lower() == "production"
+    db_initialized = False
 
-    # Create database tables with instant SQLite fallback
+    # Initialize database tables and idempotent seed data
     try:
-        async def _init_primary():
-            async with engine.begin() as conn:
-                await conn.run_sync(Base.metadata.create_all)
-                await _ensure_db_columns(conn)
-        await asyncio.wait_for(_init_primary(), timeout=2.5)
-        logger.info("✅ Primary Database tables initialized")
+        logger.info(f"Initializing primary database (timeout: 30.0s, env: {settings.APP_ENV})...")
+        init_res = await asyncio.wait_for(init_and_seed_db(), timeout=30.0)
+        db_initialized = True
+        logger.info(f"✅ Primary Database initialized successfully: {len(init_res.get('tables', []))} tables verified/ready")
     except Exception as e:
-        logger.warning(f"⚠️ Primary DB connection unavailable ({e}). Initializing SQLite local fallback...")
-        from app.core import database
-        database.engine = database.create_db_engine("sqlite+aiosqlite:///./dsr_go.db")
-        database.async_session = database.async_sessionmaker(
-            database.engine,
-            class_=database.AsyncSession,
-            expire_on_commit=False,
-        )
-        async with database.engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
-            await _ensure_db_columns(conn)
-        logger.info("✅ SQLite Local Database fallback ready")
+        logger.error(f"❌ Primary Database initialization failed: {type(e).__name__}: {e}")
+        if is_production:
+            logger.critical("🛑 Production database initialization failed. Halting startup. SQLite fallback is disabled in production.")
+            raise RuntimeError(f"Production database initialization failed: {e}") from e
+        else:
+            logger.warning(f"⚠️ Primary DB connection unavailable ({e}). Initializing SQLite local fallback...")
+            database.engine = database.create_db_engine("sqlite+aiosqlite:///./dsr_go.db")
+            database.async_session = database.async_sessionmaker(
+                database.engine,
+                class_=database.AsyncSession,
+                expire_on_commit=False,
+            )
+            await init_and_seed_db()
+            db_initialized = True
+            logger.info("✅ SQLite Local Database fallback ready")
 
-    # Auto-seed initial admin/user data
-    try:
-        from seed import seed
-        await seed()
-    except Exception as se:
-        logger.debug(f"Auto-seed notification: {se}")
-
-    # Start live telemetry & movement background loop
-    movement_task = asyncio.create_task(_run_live_fleet_simulation())
+    # Start live telemetry & movement background loop ONLY after database initialization succeeds
+    movement_task = None
+    if db_initialized:
+        movement_task = asyncio.create_task(_run_live_fleet_simulation())
+    else:
+        logger.warning("⚠️ Background fleet simulation skipped because database was not initialized.")
 
     yield
 
     # Shutdown
-    movement_task.cancel()
+    if movement_task:
+        movement_task.cancel()
     logger.info("🛑 Shutting down...")
     try:
         await close_redis()
     except Exception:
         pass
     try:
-        await engine.dispose()
+        await database.engine.dispose()
     except Exception:
         pass
 
@@ -195,7 +187,7 @@ app = FastAPI(
 # — Security & CORS Middleware ————————————————————————————————————————————————
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
+    allow_origins=settings.cors_origins_list,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -226,6 +218,7 @@ app.include_router(deliveries.router, prefix="/api/v1")
 app.include_router(users.router, prefix="/api/v1")
 app.include_router(otp.router, prefix="/api/v1")
 app.include_router(analytics.router, prefix="/api/v1")
+app.include_router(admin.router, prefix="/api/v1")
 app.include_router(tracking.router)
 
 

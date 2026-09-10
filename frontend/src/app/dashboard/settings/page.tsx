@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useThemeTransition } from "@/hooks/useThemeTransition";
+import DatabaseManagementCard from "@/components/DatabaseManagementCard";
 
 export default function SettingsPage() {
   const { user, token } = useAuthStore();
@@ -466,6 +467,11 @@ export default function SettingsPage() {
               <span>Clear Application Local Cache</span>
             </button>
           </div>
+
+          {/* Database Management for Admin */}
+          {user?.role === "admin" && (
+            <DatabaseManagementCard />
+          )}
         </div>
       )}
       </div>
