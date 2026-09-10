@@ -1,7 +1,7 @@
 import asyncio
 from typing import Any, Dict, Optional
 from loguru import logger
-from sqlalchemy import select, delete, text
+from sqlalchemy import select, delete, text, inspect
 from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker, AsyncSession
 
 from app.core import database
@@ -15,19 +15,51 @@ from app.models.robot import Robot, RobotStatus
 async def create_tables(engine: Optional[AsyncEngine] = None) -> None:
     """Ensure all database tables exist without dropping existing data."""
     target_engine = engine or database.engine
+
+    # Step 1: Create all tables in an isolated transaction so it commits cleanly
     async with target_engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+    logger.info("Base metadata tables created or verified successfully.")
 
-        # Ensure optional delivery columns exist if database was migrated from older versions
-        for col, col_type in [
-            ("is_preloaded", "BOOLEAN DEFAULT FALSE"),
-            ("extra_stops", "TEXT"),
-            ("estimated_arrival", "TIMESTAMP WITH TIME ZONE"),
-        ]:
+    # Step 2: Ensure optional delivery columns exist if database was migrated from older versions
+    def _get_delivery_columns(sync_conn):
+        inspector = inspect(sync_conn)
+        if "deliveries" in inspector.get_table_names():
+            return {c["name"] for c in inspector.get_columns("deliveries")}
+        return set()
+
+    try:
+        async with target_engine.connect() as conn:
+            existing_cols = await conn.run_sync(_get_delivery_columns)
+    except Exception as e:
+        logger.warning(f"Could not inspect deliveries table columns: {e}")
+        existing_cols = set()
+
+    columns_to_ensure = [
+        ("is_preloaded", "BOOLEAN DEFAULT FALSE"),
+        ("extra_stops", "TEXT"),
+        ("estimated_arrival", "TIMESTAMP WITH TIME ZONE"),
+    ]
+    missing_cols = [
+        (col, col_type) for col, col_type in columns_to_ensure if col not in existing_cols
+    ]
+
+    if missing_cols:
+        is_postgres = "postgresql" in target_engine.dialect.name
+        for col, col_type in missing_cols:
             try:
-                await conn.execute(text(f"ALTER TABLE deliveries ADD COLUMN {col} {col_type};"))
-            except Exception:
-                pass
+                async with target_engine.begin() as conn:
+                    if is_postgres:
+                        await conn.execute(
+                            text(f"ALTER TABLE deliveries ADD COLUMN IF NOT EXISTS {col} {col_type};")
+                        )
+                    else:
+                        await conn.execute(
+                            text(f"ALTER TABLE deliveries ADD COLUMN {col} {col_type};")
+                        )
+                logger.info(f"Added legacy column '{col}' to deliveries table.")
+            except Exception as err:
+                logger.warning(f"Could not add column {col} to deliveries: {err}")
 
 
 async def seed_data(
