@@ -798,5 +798,7 @@
   100% { transform: translateY(100%); opacity: 0; }
 }
 
-
-
+/* ── Leaflet Dark Mode Tiles ── */
+.dark-tiles .leaflet-tile {
+  filter: invert(100%) hue-rotate(190deg) brightness(85%) contrast(115%) saturate(30%) !important;
+}

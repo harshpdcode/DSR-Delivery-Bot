@@ -186,9 +186,7 @@ export default function CampusMap({
     return () => cancelAnimationFrame(animFrame);
   }, [animatedPos]);
 
-  const tileUrl = isDark
-    ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-    : "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png";
+  const tileUrl = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
 
   const allRobots = useMemo(() => {
     if (robotsList && robotsList.length > 0) return robotsList;
@@ -206,6 +204,11 @@ export default function CampusMap({
       className={`relative rounded-2xl overflow-hidden border border-surface-3 isolation-isolate z-0 ${className}`}
       style={{ height, minHeight: height }}
     >
+      <style>{`
+        .dark-tiles .leaflet-tile {
+          filter: invert(100%) hue-rotate(190deg) brightness(85%) contrast(115%) saturate(30%) !important;
+        }
+      `}</style>
       <MapContainer
         center={animatedPos || CAMPUS_CENTER}
         zoom={17}
@@ -217,7 +220,8 @@ export default function CampusMap({
           key={isDark ? "dark-map" : "light-map"}
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url={tileUrl}
-          subdomains={["a", "b", "c", "d"]}
+          subdomains={["a", "b", "c"]}
+          className={isDark ? "dark-tiles" : ""}
         />
 
         {/* Route Polyline Trail */}
